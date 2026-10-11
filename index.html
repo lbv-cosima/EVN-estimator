@@ -1,0 +1,2578 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EVN Estimator - Ước tính tiền điện</title>
+  
+  <!-- Favicon: Biểu tượng chính thức của EVN Estimator (Bo tròn chuẩn giao diện app) -->
+  <link rel="icon" type="image/png" href="assets/favicon-rounded.png">
+  <link rel="apple-touch-icon" href="assets/favicon-rounded.png">
+  
+  <!-- Google Fonts: Be Vietnam Pro (Chuẩn quốc tế tiếng Việt, thẩm mỹ cao) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            teal: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              200: '#99f6e4',
+              300: '#5eead4',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              600: '#008f7a',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            },
+            emerald: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              200: '#a7f3d0',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+            }
+          },
+          fontFamily: {
+            sans: ['"Be Vietnam Pro"', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="styles.css?v=20261011_v11">
+</head>
+<body class="bg-[#f4f7f6] dark:bg-[#0b1122] text-slate-800 dark:text-slate-100 antialiased min-h-screen flex flex-col lg:flex-row">
+
+  <!-- MOBILE SIDEBAR BACKDROP -->
+  <div id="sidebarBackdrop" onclick="toggleSidebar(false)" class="hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-xs lg:hidden transition-opacity"></div>
+
+  <!-- LEFT SIDEBAR -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-60 bg-white border-r border-slate-200/80 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out flex flex-col justify-between p-5 select-none shadow-sm lg:shadow-none">
+    
+    <!-- Top Brand & Navigation -->
+    <div class="space-y-6">
+      
+      <!-- Brand Logo & Taskbar Collapse Button -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5 cursor-pointer group min-w-0 flex-1" onclick="switchTab('overview')">
+          <img src="assets/evn-logo-clean.png" alt="EVN Estimator Logo" class="w-10 h-10 rounded-2xl object-contain drop-shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+          <div class="min-w-0">
+            <h2 class="text-[15px] font-black tracking-tight leading-tight select-none truncate">
+              <span class="text-slate-900 dark:text-white">EVN Est</span><span class="text-[#058768] dark:text-[#10b981]">imator</span>
+            </h2>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="w-3 h-[1.5px] bg-emerald-400 rounded-full flex-shrink-0"></span>
+              <p class="text-[10.5px] font-medium text-slate-400 truncate">Ước tính tiền điện</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Taskbar Collapse Button (Đặt kế bên tiêu đề EVN Estimator) -->
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button id="taskbarCollapseBtn" onclick="toggleTaskbarCollapse()" class="p-1.5 rounded-xl text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-slate-800 border border-transparent hover:border-emerald-200/60 dark:hover:border-slate-700 transition flex items-center justify-center cursor-pointer" title="Thu gọn thanh taskbar" aria-label="Thu gọn thanh taskbar">
+            <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+          </button>
+          <!-- Mobile Close Button -->
+          <button onclick="toggleSidebar(false)" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" aria-label="Đóng menu">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Menu: Separate Sections / Tabs -->
+      <nav class="space-y-1.5 pt-2">
+        <button onclick="switchTab('overview')" class="w-full sidebar-nav-item active" data-tab="overview">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          <span>Tổng quan</span>
+        </button>
+
+        <button onclick="switchTab('appliances')" class="w-full sidebar-nav-item" data-tab="appliances">
+          <i data-lucide="tv" class="w-5 h-5"></i>
+          <span>Thiết bị</span>
+        </button>
+
+        <button onclick="switchTab('estimate')" class="w-full sidebar-nav-item" data-tab="estimate">
+          <i data-lucide="calendar" class="w-5 h-5"></i>
+          <span>Ước tính</span>
+        </button>
+
+        <button onclick="switchTab('analytics')" class="w-full sidebar-nav-item" data-tab="analytics">
+          <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+          <span>Thống kê</span>
+        </button>
+
+        <button onclick="switchTab('evn-pricing')" class="w-full sidebar-nav-item" data-tab="evn-pricing">
+          <i data-lucide="zap" class="w-5 h-5"></i>
+          <span>Giá điện EVN</span>
+        </button>
+
+        <button onclick="switchTab('tips')" class="w-full sidebar-nav-item" data-tab="tips">
+          <i data-lucide="lightbulb" class="w-5 h-5"></i>
+          <span>Mẹo tiết kiệm</span>
+        </button>
+
+        <button onclick="switchTab('settings')" class="w-full sidebar-nav-item" data-tab="settings">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          <span>Cài đặt</span>
+        </button>
+      </nav>
+
+    </div>
+
+    <!-- Weather Card 3D Frame (Ảnh 2 chuẩn với text động theo thời tiết live & mở hộp thoại chọn khu vực) -->
+    <div class="pt-3">
+      <div onclick="openWeatherLocationModal()" class="weather-frame-container relative overflow-hidden rounded-[22px] group cursor-pointer transition-transform hover:scale-[1.02]" title="Chạm để chọn khu vực thời tiết thực tế">
+        
+        <!-- 1. Ảnh 3D Thời Tiết Chuẩn (Template sạch không text cứng) -->
+        <img src="assets/weather-card-3d.png" alt="Thời tiết & Tiết kiệm điện" class="w-full h-auto block select-none pointer-events-none">
+
+        <!-- 1.5. Dynamic Weather Condition Icon (Hiển thị biểu tượng 3D linh hoạt: Nắng, Ban đêm, Có mây, Mưa...) -->
+        <div id="weatherCardConditionIcon" class="weather-condition-icon-container" aria-hidden="true"></div>
+
+        <!-- 2. Dynamic Live Weather Text (Rộng rãi, không bị cắt text, bỏ nút Đổi theo yêu cầu) -->
+        <div class="absolute top-[14%] left-[23.5%] w-[70%] pointer-events-none select-none">
+          <div id="weatherCardLiveTempText" class="font-black text-[#502b18] text-[13px] sm:text-[14.5px] leading-tight drop-shadow-2xs">
+            32°C • Nắng gắt
+          </div>
+          <div class="text-[10px] sm:text-[11px] font-extrabold text-[#703b1b] opacity-90 mt-1 flex items-center gap-1">
+            <span>📍</span><span id="weatherCardLiveCityName">TP. Hồ Chí Minh</span>
+          </div>
+        </div>
+
+        <!-- 3. Hiệu Ứng Gió Thổi Nhẹ Trong Khung Tranh (Breeze Streams, Floating Leaves, Sun Pulse) -->
+        <div class="weather-wind-overlay">
+          <!-- Các luồng gió thổi lượn sóng từ máy lạnh -->
+          <div class="wind-breeze-stream stream-1"></div>
+          <div class="wind-breeze-stream stream-2"></div>
+          <div class="wind-breeze-stream stream-3"></div>
+
+          <!-- Các lá xanh bay lượn theo luồng gió -->
+          <span class="floating-wind-leaf leaf-1">🍃</span>
+          <span class="floating-wind-leaf leaf-2">🍃</span>
+          <span class="floating-wind-leaf leaf-3">🍃</span>
+
+          <!-- Vùng tỏa sáng dịu của mặt trời -->
+          <div class="sun-glow-pulse"></div>
+        </div>
+
+        <!-- 4. Hotspot tương tác cho nút mũi tên xanh tròn bên phải -->
+        <div class="absolute right-[3%] bottom-[14%] w-[24%] h-[38%] rounded-full cursor-pointer z-20" onclick="event.stopPropagation(); openWeatherLocationModal();" title="Chọn tỉnh / thành phố thời tiết"></div>
+
+      </div>
+
+      <!-- Chú thích bản quyền sidebar -->
+      <div class="mt-2 text-center">
+        <p class="text-[11px] font-medium text-slate-400 select-none">©2026 EVN Estimator</p>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN WRAPPER (Shifted for sidebar on desktop) -->
+  <div id="mainWrapper" class="flex-1 lg:ml-60 flex flex-col min-w-0 min-h-screen">
+
+    <!-- HEADER / TOPBAR -->
+    <header class="bg-white/85 backdrop-blur-md sticky top-0 z-30 border-b border-emerald-100/80 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 relative">
+      
+      <!-- Left: Mobile Toggle & Page Title with Leaf Badge -->
+      <div class="flex items-center gap-3.5 min-w-0 z-10">
+        <!-- Expand Taskbar Button (Mobile Hamburger & Desktop Restore Button) -->
+        <button id="taskbarExpandBtn" onclick="toggleTaskbarCollapse()" class="lg:hidden p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer" aria-label="Mở / Đóng thanh taskbar" title="Mở thanh taskbar">
+          <i data-lucide="panel-left-open" class="w-5 h-5"></i>
+        </button>
+
+        <div class="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0">
+          <img src="assets/calc-3d-icon.png" alt="Ước tính tiền điện" class="w-10 h-10 object-contain drop-shadow-sm hover:scale-105 transition-transform">
+        </div>
+
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 id="pageTitleText" class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight truncate">
+              Ước Tính Tiền Điện Tháng Tới
+            </h1>
+          </div>
+          <p id="pageSubtitleText" class="text-xs text-slate-500 truncate hidden md:block mt-0.5 font-medium">
+            Mô phỏng chi tiết theo thiết bị, thông số hãng và yếu tố thời tiết
+          </p>
+        </div>
+      </div>
+
+      <!-- Right: Donate, Notification Bell, User Avatar (Flush Right) -->
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-shrink-0 z-30">
+        <!-- 3D Tactile Glossy Donate Button (Sạch sẽ, sang trọng, bỏ hoàn toàn icon theo yêu cầu) -->
+        <button onclick="openDonateModal()" class="btn-donate-3d group" title="Ủng hộ tác giả duy trì dự án">
+          <span class="font-extrabold tracking-tight">Ủng hộ</span>
+        </button>
+
+        <!-- Dark / Light Mode Toggle Button (Nút chuyển chế độ sáng / tối kế bên Donate) -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white hover:bg-slate-50 text-slate-600 border border-slate-200/80 shadow-2xs flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer" title="Chuyển chế độ Sáng / Tối">
+          <i id="themeToggleIcon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+
+        <!-- News & Media Press Button & Dropdown (Tin tức tham khảo) -->
+        <div class="relative inline-block text-left z-30">
+          <button id="newsPressBtn" onclick="toggleNewsPressDropdown()" class="relative w-9 h-9 rounded-full bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 shadow-2xs flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer" title="Tin tức tham khảo">
+            <!-- Icon chuẩn ảnh 1: Khung bo tròn với thanh ngang phân cách -->
+            <svg viewBox="0 0 24 24" class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3.5" y="4.5" width="17" height="15" rx="4.5"></rect>
+              <line x1="3.5" y1="9.5" x2="20.5" y2="9.5"></line>
+            </svg>
+          </button>
+
+          <!-- News Press Dropdown Menu -->
+          <div id="newsPressDropdown" class="hidden absolute right-0 mt-2 w-84 sm:w-96 rounded-2xl shadow-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 z-50 py-3 text-xs text-slate-700 dark:text-slate-200 animate-in fade-in zoom-in-95">
+            <!-- Header -->
+            <div class="px-4 pb-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="font-extrabold text-slate-900 dark:text-white text-sm">Tin Tức Tham Khảo</span>
+              </div>
+            </div>
+            
+            <!-- News Items List -->
+            <div class="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80">
+              <!-- Item 1: Báo Thanh Niên -->
+              <a href="https://thanhnien.vn/tai-sao-dien-dung-cang-nhieu-cang-dat-hon-185260622152428209.htm" target="_blank" rel="noopener noreferrer" class="p-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition flex items-start gap-3 group">
+                <div class="w-8 h-8 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">
+                  <img src="https://www.google.com/s2/favicons?domain=thanhnien.vn&sz=64" alt="Báo Thanh Niên" class="w-7 h-7 object-contain" onerror="this.onerror=null; this.src='https://thanhnien.vn/favicon.ico';">
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400">Báo Thanh Niên</span>
+                    <i data-lucide="external-link" class="w-3 h-3 text-slate-400 group-hover:text-blue-600 transition"></i>
+                  </div>
+                  <p class="font-bold text-slate-800 dark:text-slate-100 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition mt-0.5">
+                    Tại sao điện dùng càng nhiều càng đắt hơn?
+                  </p>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                    Khi sử dụng vượt quá một ngưỡng công suất, hệ thống buộc phải huy động các nguồn điện đắt đỏ hơn, áp dụng biểu giá lũy tiến bậc thang.
+                  </p>
+                </div>
+              </a>
+
+              <!-- Item 2: Báo CafeF -->
+              <a href="https://cafef.vn/bat-dieu-hoa-1-dem-het-bao-nhieu-tien-dien-evn-co-cau-tra-loi-188260414204453942.chn" target="_blank" rel="noopener noreferrer" class="p-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition flex items-start gap-3 group">
+                <div class="w-8 h-8 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">
+                  <img src="https://www.google.com/s2/favicons?domain=cafef.vn&sz=64" alt="Báo điện tử CafeF" class="w-7 h-7 object-contain" onerror="this.onerror=null; this.src='https://cafef.vn/favicon.ico';">
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">Báo điện tử CafeF</span>
+                    <i data-lucide="external-link" class="w-3 h-3 text-slate-400 group-hover:text-amber-600 transition"></i>
+                  </div>
+                  <p class="font-bold text-slate-800 dark:text-slate-100 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition mt-0.5">
+                    Bật điều hòa 1 đêm hết bao nhiêu tiền điện? EVN có câu trả lời
+                  </p>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                    Dùng điều hòa qua đêm là nhu cầu phổ biến vào mùa hè; EVN giải đáp chi phí thực tế và khuyến nghị mức nhiệt độ tối ưu tiết kiệm điện.
+                  </p>
+                </div>
+              </a>
+
+              <!-- Item 3: Công an tỉnh Phú Thọ -->
+              <a href="https://congan.phutho.gov.vn/article/Mot-so-bien-phap-dam-bao-an-toan-PCCC-khi-su-dung-26643-57" target="_blank" rel="noopener noreferrer" class="p-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition flex items-start gap-3 group">
+                <div class="w-8 h-8 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform mt-0.5">
+                  <img src="https://www.google.com/s2/favicons?domain=congan.phutho.gov.vn&sz=64" alt="Cổng TTĐT Công an tỉnh Phú Thọ" class="w-7 h-7 object-contain" onerror="this.onerror=null; this.src='https://congan.phutho.gov.vn/favicon.ico';">
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] font-bold text-rose-600 dark:text-rose-400">Cổng TTĐT Công an tỉnh Phú Thọ</span>
+                    <i data-lucide="external-link" class="w-3 h-3 text-slate-400 group-hover:text-rose-600 transition"></i>
+                  </div>
+                  <p class="font-bold text-slate-800 dark:text-slate-100 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition mt-0.5">
+                    Một số biện pháp đảm bảo an toàn PCCC khi sử dụng điện trong hộ gia đình
+                  </p>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                    Hướng dẫn các biện pháp phòng ngừa quá tải, chập cháy điện, bảo đảm an toàn phòng cháy chữa cháy khi sử dụng thiết bị điện gia đình.
+                  </p>
+                </div>
+              </a>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-4 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <span class="text-[10px] text-slate-400">Nguồn báo chí & cơ quan chức năng</span>
+              <a href="https://news.google.com/search?q=ti%E1%BB%81n+%C4%91i%E1%BB%87n+EVN&hl=vi&gl=VN&ceid=VN%3Avi" target="_blank" rel="noopener noreferrer" class="text-[10.5px] font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400 flex items-center gap-1 hover:underline">
+                Xem thêm tin tức ↗
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Profile Avatar & Menu Dropdown -->
+        <div class="relative inline-block text-left z-30">
+          <button id="userProfileBtn" onclick="toggleUserProfileDropdown(event)" class="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-full hover:bg-emerald-50/60 border border-transparent hover:border-emerald-200/60 transition cursor-pointer">
+            <div id="headerUserAvatar" class="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow-xs ring-2 ring-emerald-600/20 overflow-hidden">
+              NVA
+            </div>
+            <span id="headerUserName" class="text-xs font-bold text-slate-800 hidden sm:inline-block">Nguyễn Văn A</span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+          </button>
+
+          <!-- Dropdown menu -->
+          <div id="userProfileDropdown" class="hidden absolute right-0 mt-2 w-64 rounded-2xl shadow-2xl bg-white border border-slate-200/90 z-50 py-2 text-xs text-slate-700 animate-in fade-in zoom-in-95">
+            <div onclick="openProfileModal()" class="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50 transition rounded-t-2xl">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div id="dropdownUserAvatar" class="w-9 h-9 rounded-full bg-emerald-700 text-white flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-xs ring-2 ring-emerald-600/20 overflow-hidden">
+                  NVA
+                </div>
+                <div class="min-w-0">
+                  <p id="dropdownUserName" class="font-bold text-slate-900 truncate">Nguyễn Văn A</p>
+                  <p id="dropdownUserSubtitle" class="text-[11px] text-slate-400 truncate">Gia đình 4 thành viên</p>
+                </div>
+              </div>
+              <button type="button" onclick="openProfileModal(); event.stopPropagation();" class="text-emerald-700 hover:text-emerald-800 p-1.5 rounded-lg hover:bg-emerald-50 transition" title="Hồ sơ hộ gia đình">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+            <button type="button" onclick="openProfileModal()" class="w-full text-left px-4 py-2.5 hover:bg-emerald-50 text-emerald-800 font-semibold flex items-center gap-2.5 cursor-pointer">
+              <i data-lucide="user" class="w-4 h-4 text-emerald-600"></i> Hồ sơ hộ gia đình
+            </button>
+            <button onclick="openPresetsModal()" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700">
+              <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2.5" y="6" width="19" height="15" rx="3.5" stroke="currentColor" stroke-width="2"/>
+                <path d="M8.5 6V3.8C8.5 2.8 9.3 2 10.3 2H13.7C14.7 2 15.5 2.8 15.5 3.8V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="6.5" y1="8.5" x2="6.5" y2="18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="17.5" y1="8.5" x2="17.5" y2="18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 12.8C11.3 11.3 9.4 11.2 8.7 12.4C7.9 13.8 9.4 15.3 12 17C14.6 15.3 16.1 13.8 15.3 12.4C14.6 11.2 12.7 11.3 12 12.8Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Kho mẫu thiết bị có sẵn</span>
+            </button>
+            <button onclick="window.print()" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700">
+              <i data-lucide="printer" class="w-4 h-4 text-slate-400"></i> In / Xuất PDF hóa đơn
+            </button>
+            <button onclick="exportData()" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700">
+              <i data-lucide="download" class="w-4 h-4 text-slate-400"></i> Sao lưu file JSON
+            </button>
+            <label class="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 cursor-pointer">
+              <i data-lucide="upload" class="w-4 h-4 text-slate-400"></i> Nhập file sao lưu
+              <input type="file" id="importFileInput" accept=".json" class="hidden">
+            </label>
+            <hr class="my-1 border-slate-100">
+            <button onclick="clearAllAppliances()" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center gap-2.5">
+              <i data-lucide="trash-2" class="w-4 h-4 text-slate-400"></i> Xóa sạch danh sách thiết bị
+            </button>
+            <button onclick="resetToDefault()" class="w-full text-left px-4 py-2.5 hover:bg-emerald-50 text-emerald-800 flex items-center gap-2.5">
+              <i data-lucide="rotate-ccw" class="w-4 h-4 text-emerald-600"></i> Nạp lại dữ liệu mẫu
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </header>
+
+    <!-- MAIN DASHBOARD CONTENT (Separate Views per Sidebar Section) -->
+    <main class="flex-1 px-4 sm:px-8 pt-6 pb-44 sm:pb-52 max-w-[1600px] w-full mx-auto">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: TỔNG QUAN (OVERVIEW) -->
+      <!-- ========================================== -->
+      <div id="tab-overview" class="tab-view space-y-6">
+        
+        <!-- TOP KPI SECTION: 4 CARDS -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          
+          <!-- Card 1: Tổng tiền dự kiến (Emerald 3D gradient card) -->
+          <div class="kpi-gradient-card p-6 text-white flex flex-col justify-between relative overflow-hidden min-h-[175px]">
+            <!-- 3D Glossy Foliage Graphics -->
+            <svg class="kpi-leaf-decor pointer-events-none" viewBox="0 0 170 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="kpiLeafG1" x1="15" y1="150" x2="160" y2="15" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#064e3b" />
+                  <stop offset="45%" stop-color="#059669" />
+                  <stop offset="85%" stop-color="#10b981" />
+                  <stop offset="100%" stop-color="#6ee7b7" />
+                </linearGradient>
+                <linearGradient id="kpiLeafG2" x1="50" y1="165" x2="165" y2="55" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#065f46" />
+                  <stop offset="55%" stop-color="#10855e" />
+                  <stop offset="100%" stop-color="#34d399" />
+                </linearGradient>
+                <linearGradient id="kpiGloss" x1="40" y1="20" x2="140" y2="120" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65" />
+                  <stop offset="40%" stop-color="#ffffff" stop-opacity="0.15" />
+                  <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                </linearGradient>
+                <filter id="kpiShadow" x="-20%" y="-20%" width="150%" height="150%">
+                  <feDropShadow dx="3" dy="6" stdDeviation="6" flood-color="#022c22" flood-opacity="0.45"/>
+                </filter>
+              </defs>
+              <!-- Background Secondary Leaf -->
+              <g filter="url(#kpiShadow)">
+                <path d="M25 165 C 30 105, 75 60, 135 40 C 128 105, 90 148, 25 165 Z" fill="url(#kpiLeafG2)"/>
+                <path d="M25 165 C 75 115, 110 75, 135 40" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+              </g>
+              <!-- Primary Main Overlapping Leaf -->
+              <g filter="url(#kpiShadow)">
+                <path d="M50 165 C 55 95, 105 32, 165 10 C 158 80, 115 142, 50 165 Z" fill="url(#kpiLeafG1)"/>
+                <path d="M50 165 C 100 105, 138 55, 165 10" stroke="#d1fae5" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+                <!-- Gloss highlight -->
+                <path d="M60 135 C 75 80, 120 40, 155 18 C 145 60, 110 105, 60 135 Z" fill="url(#kpiGloss)"/>
+              </g>
+              <!-- Foreground Small Accent Leaf -->
+              <g filter="url(#kpiShadow)">
+                <path d="M80 168 C 95 130, 135 110, 168 105 C 155 135, 128 158, 80 168 Z" fill="#34d399" opacity="0.85"/>
+                <path d="M80 168 C 120 140, 145 125, 168 105" stroke="#ecfdf5" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/>
+              </g>
+            </svg>
+
+            <div class="relative z-10">
+              <div class="flex items-center justify-between text-emerald-100 text-xs font-bold uppercase tracking-wider mb-2">
+                <span class="flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-300"></i> TIỀN ĐIỆN DỰ KIẾN THÁNG TỚI</span>
+                <div class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-xs hover:scale-105 transition-transform flex-shrink-0" title="Tiền điện dự kiến">
+                  <i data-lucide="wallet" class="w-5 h-5"></i>
+                </div>
+              </div>
+              
+              <div class="my-2">
+                <div class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white drop-shadow-xs" id="summaryTotalBill">
+                  0 đ
+                </div>
+              </div>
+            </div>
+
+            <div class="relative z-10 text-xs text-emerald-100/90 mt-3 flex items-center justify-between gap-2 border-t border-white/15 pt-2.5">
+              <span>Chưa VAT: <strong id="summarySubtotal" class="text-white font-bold">0 đ</strong></span>
+              
+              <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white font-bold text-[11px] border border-white/25 shadow-xs" title="So với tháng trước">
+                <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-200"></i>
+                <span id="summaryComparisonBadge">+ 8%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Tổng sản lượng điện tiêu thụ -->
+          <div class="dashboard-card p-6 flex flex-col justify-between relative overflow-hidden min-h-[175px]">
+            <div class="relative z-10">
+              <div class="flex items-start justify-between text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 gap-2">
+                <span class="leading-tight pt-1">TỔNG ĐIỆN NĂNG TIÊU THỤ</span>
+                <div class="w-10 h-10 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-800 text-teal-700 dark:text-teal-400 flex items-center justify-center shadow-xs hover:scale-105 transition-transform flex-shrink-0 -mr-2 sm:-mr-2.5 -mt-0.5" title="Tổng điện năng tiêu thụ (kWh)">
+                  <!-- Vector icon chuẩn Template Ảnh 2 (Hàng 1, Cột 1: Công tơ điện đo kWh có mặt số và đồng hồ kim) -->
+                  <svg viewBox="0 0 24 24" class="w-5 h-5 text-teal-700 dark:text-teal-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 14V6.5A3.5 3.5 0 0 1 7.5 3h9A3.5 3.5 0 0 1 20 6.5v5.5" />
+                    <line x1="4" y1="9" x2="20" y2="9" />
+                    <path d="M4 14v1a3.5 3.5 0 0 0 3.5 3.5H12" />
+                    <circle cx="16" cy="16" r="4.2" />
+                    <polyline points="16 14 16 16 17.5 17.5" />
+                  </svg>
+                </div>
+              </div>
+
+              <div class="my-2">
+                <div class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight" id="summaryTotalKwh">
+                  0 kWh
+                </div>
+              </div>
+            </div>
+
+            <div class="relative z-10 text-xs text-slate-500 mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2.5">
+              <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Trung bình: <strong class="text-slate-800" id="summaryDailyKwh">~0 kWh/ngày</strong></span>
+            </div>
+          </div>
+
+          <!-- Card 3: Chi phí trung bình mỗi ngày -->
+          <div class="dashboard-card p-6 flex flex-col justify-between relative overflow-hidden min-h-[175px]">
+            <div class="relative z-10">
+              <div class="flex items-start justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2 gap-2">
+                <span class="leading-tight pt-1">CHI PHÍ TRUNG BÌNH MỖI NGÀY</span>
+                <div class="w-10 h-10 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-800 text-teal-700 dark:text-teal-400 flex items-center justify-center shadow-xs hover:scale-105 transition-transform flex-shrink-0 -mr-2 sm:-mr-2.5 -mt-0.5" title="Chi phí trung bình mỗi ngày">
+                  <!-- Vector icon chuẩn Template Ảnh 2 (Biểu đồ cột tăng trưởng và mũi tên xu hướng hướng lên) -->
+                  <svg viewBox="0 0 24 24" class="w-5 h-5 text-teal-700 dark:text-teal-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="20" x2="5" y2="16" />
+                    <line x1="11" y1="20" x2="11" y2="12" />
+                    <line x1="17" y1="20" x2="17" y2="8" />
+                    <polyline points="13 4 19 4 19 10" />
+                    <path d="M4 14c4-2.5 8-6 15-10" />
+                  </svg>
+                </div>
+              </div>
+
+              <div class="my-2">
+                <div class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight" id="summaryDailyAvg">
+                  0 đ
+                </div>
+              </div>
+            </div>
+
+            <div class="relative z-10 text-xs text-slate-500 mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2.5">
+              <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Ước tính theo 30 ngày/tháng</span>
+            </div>
+          </div>
+
+          <!-- Card 4: Giá điện bình quân / 1 số -->
+          <div class="dashboard-card p-6 flex flex-col justify-between relative overflow-hidden min-h-[175px]">
+            <div class="relative z-10">
+              <div class="flex items-start justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2 gap-2">
+                <span class="leading-tight pt-1">GIÁ ĐIỆN BÌNH QUÂN / 1 SỐ</span>
+                <div class="w-10 h-10 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-800 text-teal-700 dark:text-teal-400 flex items-center justify-center shadow-xs hover:scale-105 transition-transform flex-shrink-0 -mr-2 sm:-mr-2.5 -mt-0.5" title="Giá điện bình quân / 1 số">
+                  <!-- Vector icon chuẩn nét stroke đồng bộ (Đồng xu tiền biểu thị đơn giá điện kWh) -->
+                  <svg viewBox="0 0 24 24" class="w-5 h-5 text-teal-700 dark:text-teal-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M14.8 9.5h-3.6a2 2 0 1 0 0 3.8h1.6a2 2 0 1 1 0 3.8H9" />
+                    <line x1="12" y1="6.8" x2="12" y2="8.8" />
+                    <line x1="12" y1="17.2" x2="12" y2="19.2" />
+                  </svg>
+                </div>
+              </div>
+
+              <div class="my-2">
+                <div class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight" id="summaryAvgRate">
+                  0 đ/kWh
+                </div>
+              </div>
+            </div>
+
+            <div class="relative z-10 text-xs text-slate-500 mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
+              <span class="flex items-center gap-1">
+                <i data-lucide="calculator" class="w-3.5 h-3.5 text-slate-400"></i>
+                Đã gồm lũy tiến & VAT
+              </span>
+              <button onclick="switchTab('estimate')" class="w-6 h-6 rounded-full hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 flex items-center justify-center transition cursor-pointer" title="Chuyển đến mục Ước Tính Chi Phí">
+                <i data-lucide="info" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- PANORAMIC ECO FOOTER BANNER (Green Energy Landscape) -->
+        <div class="eco-landscape-banner relative overflow-hidden rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 min-h-[220px]">
+          
+          <!-- Background Vector Landscape SVG -->
+          <svg class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none z-0" viewBox="0 0 1200 240" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#e6f7ef" />
+                <stop offset="45%" stop-color="#d1fae5" />
+                <stop offset="100%" stop-color="#a7f3d0" />
+              </linearGradient>
+              <!-- Dark Mode Sky Gradient (Bầu trời đêm sinh thái lung linh) -->
+              <linearGradient id="skyGradDark" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#09182b" />
+                <stop offset="45%" stop-color="#062f26" />
+                <stop offset="100%" stop-color="#04231b" />
+              </linearGradient>
+              <linearGradient id="bannerWindG1" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
+                <stop offset="25%" stop-color="#ffffff" stop-opacity="0.95" />
+                <stop offset="65%" stop-color="#6ee7b7" stop-opacity="0.9" />
+                <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+              </linearGradient>
+              <linearGradient id="bannerWindG2" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
+                <stop offset="30%" stop-color="#a7f3d0" stop-opacity="0.85" />
+                <stop offset="75%" stop-color="#ffffff" stop-opacity="0.9" />
+                <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+              </linearGradient>
+              <linearGradient id="hillGradDistant" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6ee7b7" stop-opacity="0.6" />
+                <stop offset="100%" stop-color="#34d399" stop-opacity="0.8" />
+              </linearGradient>
+              <linearGradient id="hillGradMid" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#34d399" />
+                <stop offset="100%" stop-color="#10b981" />
+              </linearGradient>
+              <linearGradient id="hillGradFore" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#10b981" />
+                <stop offset="60%" stop-color="#059669" />
+                <stop offset="100%" stop-color="#047857" />
+              </linearGradient>
+              <linearGradient id="solarGlass" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1e3a8a" />
+                <stop offset="50%" stop-color="#2563eb" />
+                <stop offset="100%" stop-color="#3b82f6" />
+              </linearGradient>
+              <filter id="ecoGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="8" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <!-- Sky -->
+            <rect class="banner-sky-rect" width="1200" height="240" fill="url(#skyGrad)" />
+
+            <!-- Soft Sun Glow in Sky (Chuyển dịu thành ánh trăng dịu mát ban đêm) -->
+            <circle class="banner-sun-circle" cx="950" cy="50" r="80" fill="#fef08a" opacity="0.45" filter="url(#ecoGlow)" />
+            <circle cx="950" cy="50" r="45" fill="#fef9c3" opacity="0.8" />
+
+            <!-- Distant Mountain/Hills -->
+            <path d="M0 160 Q 250 110, 500 145 T 1000 130 T 1200 140 L 1200 240 L 0 240 Z" fill="url(#hillGradDistant)" />
+
+            <!-- Wind Turbines (Distant Hilltops - Cánh quạt quay nhẹ nhàng) -->
+            <!-- Turbine 1 (Left-Center) -->
+            <g transform="translate(460, 65) scale(0.65)" opacity="0.9">
+              <line x1="0" y1="0" x2="0" y2="110" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+              <g class="animate-turbine-spin-1">
+                <circle cx="0" cy="0" r="5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+                <path d="M0 0 L-6 -45 Q 0 -50 6 -45 Z" fill="#ffffff" opacity="0.95"/>
+                <path d="M0 0 L40 22 Q 44 26 36 32 Z" fill="#ffffff" opacity="0.95"/>
+                <path d="M0 0 L-34 24 Q -40 20 -36 15 Z" fill="#ffffff" opacity="0.95"/>
+              </g>
+            </g>
+
+            <!-- Turbine 2 (Center-Right) -->
+            <g transform="translate(680, 50) scale(0.85)" opacity="0.95">
+              <line x1="0" y1="0" x2="0" y2="115" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+              <g class="animate-turbine-spin-2">
+                <circle cx="0" cy="0" r="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+                <path d="M0 0 L-7 -54 Q 0 -60 7 -54 Z" fill="#ffffff"/>
+                <path d="M0 0 L48 26 Q 52 31 43 38 Z" fill="#ffffff"/>
+                <path d="M0 0 L-42 29 Q -49 24 -44 18 Z" fill="#ffffff"/>
+              </g>
+            </g>
+
+            <!-- Turbine 3 (Far Right) -->
+            <g transform="translate(860, 75) scale(0.6)" opacity="0.85">
+              <line x1="0" y1="0" x2="0" y2="105" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+              <g class="animate-turbine-spin-3">
+                <circle cx="0" cy="0" r="5" fill="#f8fafc"/>
+                <path d="M0 0 L-5 -42 Q 0 -46 5 -42 Z" fill="#ffffff"/>
+                <path d="M0 0 L36 20 Q 40 24 33 29 Z" fill="#ffffff"/>
+                <path d="M0 0 L-32 22 Q -37 18 -33 14 Z" fill="#ffffff"/>
+              </g>
+            </g>
+
+            <!-- Midground Rolling Hills -->
+            <path d="M0 185 Q 280 135, 620 175 T 1200 160 L 1200 240 L 0 240 Z" fill="url(#hillGradMid)" />
+
+            <!-- Foreground Rolling Hill -->
+            <path d="M0 205 Q 350 170, 720 200 T 1200 185 L 1200 240 L 0 240 Z" fill="url(#hillGradFore)" />
+
+            <!-- Modern Eco House with Solar Roof (Right-Center) -->
+            <g transform="translate(560, 142) scale(0.78)">
+              <!-- House Base -->
+              <rect x="0" y="32" width="76" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+              <!-- Wooden accent door and window -->
+              <rect x="30" y="48" width="16" height="26" rx="2" fill="#d97706" opacity="0.85"/>
+              <rect x="10" y="44" width="14" height="14" rx="2" fill="#93c5fd" opacity="0.9" stroke="#60a5fa" stroke-width="1"/>
+              <rect x="52" y="44" width="14" height="14" rx="2" fill="#93c5fd" opacity="0.9" stroke="#60a5fa" stroke-width="1"/>
+              <!-- Angled Roof (Tệp màu xanh công nghệ cao, không lộ viền đen) -->
+              <polygon points="38,0 -6,32 82,32" fill="#1e3a8a" stroke="#2563eb" stroke-width="0.8" />
+              <!-- Solar Panel Grid on Roof -->
+              <polygon points="38,3 0,30 76,30" fill="url(#solarGlass)" stroke="#93c5fd" stroke-width="0.8"/>
+              <!-- Solar Grid Lines -->
+              <line x1="20" y1="18" x2="56" y2="18" stroke="#bfdbfe" stroke-width="0.7" opacity="0.8"/>
+              <line x1="10" y1="24" x2="66" y2="24" stroke="#bfdbfe" stroke-width="0.7" opacity="0.8"/>
+              <line x1="38" y1="5" x2="38" y2="30" stroke="#bfdbfe" stroke-width="0.7" opacity="0.8"/>
+              <line x1="26" y1="12" x2="26" y2="30" stroke="#bfdbfe" stroke-width="0.7" opacity="0.8"/>
+              <line x1="50" y1="12" x2="50" y2="30" stroke="#bfdbfe" stroke-width="0.7" opacity="0.8"/>
+            </g>
+
+            <!-- Clustered Nature Trees & Bushes (Lay nhẹ theo gió) -->
+            <g transform="translate(515, 158) scale(0.7)" class="animate-tree-sway">
+              <circle cx="20" cy="20" r="18" fill="#15803d"/>
+              <circle cx="28" cy="14" r="14" fill="#22c55e"/>
+              <rect x="18" y="32" width="5" height="16" fill="#78350f" rx="1"/>
+            </g>
+            <g transform="translate(640, 160) scale(0.65)" class="animate-tree-sway">
+              <circle cx="20" cy="20" r="18" fill="#166534"/>
+              <circle cx="26" cy="12" r="14" fill="#4ade80"/>
+              <rect x="18" y="32" width="5" height="16" fill="#78350f" rx="1"/>
+            </g>
+            <g transform="translate(730, 172) scale(0.6)" class="animate-tree-sway">
+              <circle cx="20" cy="20" r="16" fill="#15803d"/>
+              <circle cx="25" cy="15" r="12" fill="#86efac"/>
+              <rect x="18" y="30" width="4" height="14" fill="#78350f" rx="1"/>
+            </g>
+
+            <!-- HIỆU ỨNG GIÓ THỔI NHẸ KHUNG ẢNH 1: Luồng khí lượn sóng & xoáy gió lượn qua cối xay gió và thảo nguyên -->
+            <g class="banner-wind-streams pointer-events-none">
+              <!-- Luồng gió 1: Trên cao thổi qua các cánh quạt turbine -->
+              <path d="M-60 40 C 160 26, 340 54, 560 36 S 880 24, 1260 42" fill="none" stroke="url(#bannerWindG1)" stroke-width="2.6" stroke-linecap="round" class="wind-line-flow-1" />
+              
+              <!-- Luồng gió 2: Tầm trung lướt qua thân quạt gió -->
+              <path d="M-80 74 C 140 90, 410 60, 690 78 S 980 64, 1280 82" fill="none" stroke="url(#bannerWindG2)" stroke-width="2.2" stroke-linecap="round" class="wind-line-flow-2" />
+              
+              <!-- Luồng gió 3: Lượn là đà qua các sườn đồi xanh -->
+              <path d="M-50 112 C 200 98, 470 126, 770 106 S 1060 116, 1260 104" fill="none" stroke="url(#bannerWindG1)" stroke-width="1.8" stroke-linecap="round" class="wind-line-flow-3" />
+
+              <!-- Xoáy gió mềm mại 1 quanh cụm turbine trái -->
+              <path d="M 430 50 C 458 46, 474 32, 464 22 C 454 12, 436 19, 442 32 C 448 42, 470 39, 500 44" fill="none" stroke="url(#bannerWindG2)" stroke-width="1.8" stroke-linecap="round" class="wind-line-flow-2" />
+              
+              <!-- Xoáy gió mềm mại 2 trên đỉnh đồi -->
+              <path d="M 650 36 C 678 32, 694 20, 684 12 C 674 4, 660 10, 664 20 C 670 28, 688 26, 718 32" fill="none" stroke="url(#bannerWindG1)" stroke-width="1.6" stroke-linecap="round" class="wind-line-flow-1" />
+            </g>
+
+            <!-- Flying Birds Silhouette (Đàn cò bay lượn nhẹ nhàng) -->
+            <g class="animate-birds-flock-1">
+              <path d="M380 50 Q 386 42, 392 50 Q 398 42, 404 50" stroke="#047857" stroke-width="1.6" fill="none" opacity="0.7"/>
+              <path d="M405 40 Q 410 33, 415 40 Q 420 33, 425 40" stroke="#047857" stroke-width="1.4" fill="none" opacity="0.6"/>
+              <path d="M428 48 Q 433 42, 438 48 Q 443 42, 448 48" stroke="#047857" stroke-width="1.2" fill="none" opacity="0.5"/>
+            </g>
+            <g class="animate-birds-flock-2">
+              <path d="M780 65 Q 785 58, 790 65 Q 795 58, 800 65" stroke="#047857" stroke-width="1.5" fill="none" opacity="0.6"/>
+              <path d="M805 57 Q 810 50, 815 57 Q 820 50, 825 57" stroke="#047857" stroke-width="1.3" fill="none" opacity="0.5"/>
+            </g>
+          </svg>
+
+          <!-- Left Overlay Typography & Call-To-Action -->
+          <div class="relative z-10 max-w-lg">
+            <h3 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#064e3b] leading-tight tracking-tight">
+              Sử dụng điện thông minh<br>
+              <span class="text-[#047857] text-lg sm:text-xl lg:text-2xl font-bold">Vì một hành tinh xanh hơn hôm nay & mai sau</span>
+            </h3>
+            <p class="text-xs sm:text-sm text-[#065f46]/85 font-medium mt-1.5 max-w-md">
+              Mỗi hành động tắt bớt một thiết bị không dùng hay chọn chế độ Eco là bạn đang góp phần giảm phát thải và bảo vệ nguồn năng lượng quốc gia.
+            </p>
+            <div class="mt-3.5 flex items-center gap-3">
+              <button onclick="switchTab('tips')" class="btn-eco-pill-primary text-xs py-2 px-4 shadow-sm hover:shadow-md">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Cẩm nang sống xanh
+              </button>
+              <button onclick="switchTab('analytics')" class="btn-eco-pill-secondary text-xs py-2 px-4 bg-white/80 hover:bg-white border-white/60">
+                <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-emerald-700"></i> Xem chỉ số phát thải
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Floating Glassmorphic Quick Remember Card (Ghi Nhớ Nhanh) -->
+          <div class="relative z-10 w-full sm:w-auto self-stretch sm:self-auto flex items-center">
+            <div class="w-full sm:w-80 eco-quote-card bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/70 dark:border-slate-800 shadow-lg rounded-2xl p-4 sm:p-5 transition hover:shadow-xl hover:bg-white dark:hover:bg-slate-900">
+              <div class="flex items-center gap-2.5 mb-3">
+                <img src="assets/lightbulb-3d-icon.png" alt="Ghi nhớ nhanh" class="w-8 h-8 sm:w-9 sm:h-9 object-contain filter drop-shadow-[0_4px_12px_rgba(245,158,11,0.5)] flex-shrink-0 transform hover:scale-110 transition-transform duration-200">
+                <span class="text-xs sm:text-[13px] font-extrabold text-emerald-950 dark:text-emerald-300 uppercase tracking-wider">Ghi Nhớ Nhanh</span>
+              </div>
+
+              <!-- 3 Items (Xanh ngọc, không dùng khung màu đỏ, bỏ nút Tránh bậc 5,6 & bỏ text tiết kiệm 15%-30%) -->
+              <div class="space-y-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+                <div class="px-3 py-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center gap-2.5 shadow-2xs">
+                  <span class="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] flex-shrink-0">✓</span>
+                  <span>Tắt khi ra khỏi phòng</span>
+                </div>
+                <div class="px-3 py-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center gap-2.5 shadow-2xs">
+                  <span class="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] flex-shrink-0">✓</span>
+                  <span>Tắt khi không sử dụng</span>
+                </div>
+                <div class="px-3 py-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border border-emerald-200/70 dark:border-emerald-800/60 flex items-center gap-2.5 shadow-2xs">
+                  <span class="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] flex-shrink-0">✓</span>
+                  <span>Hạn chế dùng điện không cần thiết</span>
+                </div>
+              </div>
+
+              <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end text-[11px] text-slate-400">
+                <span>EVN • 2026</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: THIẾT BỊ (APPLIANCES) -->
+      <!-- ========================================== -->
+      <div id="tab-appliances" class="tab-view hidden space-y-6">
+        
+        <!-- Action Buttons Toolbar -->
+        <div class="flex items-center justify-end gap-2 flex-wrap">
+          <button onclick="openCameraScannerModal()" class="px-3.5 py-2.5 bg-gradient-to-r from-teal-50 to-emerald-50 hover:from-teal-100 hover:to-emerald-100 text-teal-800 rounded-xl text-xs sm:text-sm font-semibold border border-teal-200 transition flex items-center gap-2 shadow-2xs group">
+            <img src="assets/camera-scan-icon.png?v=20261011_v6" alt="Quét Camera AI" class="w-5 h-5 object-contain group-hover:scale-105 transition-transform">
+            <span>Quét Camera AI</span>
+          </button>
+          <button onclick="openPresetsModal()" class="px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 transition flex items-center gap-1.5 shadow-xs">
+            <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2.5" y="6" width="19" height="15" rx="3.5" stroke="currentColor" stroke-width="2"/>
+              <path d="M8.5 6V3.8C8.5 2.8 9.3 2 10.3 2H13.7C14.7 2 15.5 2.8 15.5 3.8V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="6.5" y1="8.5" x2="6.5" y2="18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="17.5" y1="8.5" x2="17.5" y2="18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 12.8C11.3 11.3 9.4 11.2 8.7 12.4C7.9 13.8 9.4 15.3 12 17C14.6 15.3 16.1 13.8 15.3 12.4C14.6 11.2 12.7 11.3 12 12.8Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Kho mẫu thiết bị</span>
+          </button>
+          <button onclick="openAddModal()" class="btn-primary px-4 py-2.5 text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4 stroke-[2.5]"></i>
+            <span>Thêm thiết bị mới</span>
+          </button>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="dashboard-card p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="relative w-full sm:w-96">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              <input type="text" id="applianceSearchInput" placeholder="Tìm theo tên, hãng, model, phòng..." class="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition">
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+              <span id="applianceCountBadge" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-teal-50 text-teal-700 border border-teal-200/80">
+                0 thiết bị
+              </span>
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 filter-tabs pt-1">
+            <button data-category="all" class="pill-tab active">Tất cả</button>
+            <button data-category="cooling" class="pill-tab">Điều hòa & Quạt</button>
+            <button data-category="fridge" class="pill-tab">Tủ lạnh</button>
+            <button data-category="kitchen" class="pill-tab">Bếp & Nấu</button>
+            <button data-category="water_laundry" class="pill-tab">Giặt & Sấy</button>
+            <button data-category="electronics" class="pill-tab">TV & Máy tính</button>
+            <button data-category="others" class="pill-tab">Chiếu sáng</button>
+            <button data-category="others_more" class="pill-tab">Khác</button>
+          </div>
+        </div>
+
+        <!-- List Container -->
+        <div id="applianceListContainer" class="space-y-3">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: ƯỚC TÍNH (ESTIMATE) -->
+      <!-- ========================================== -->
+      <div id="tab-estimate" class="tab-view hidden space-y-6">
+        
+
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- Environmental Factors Form (7 Cols) -->
+          <div class="lg:col-span-7 dashboard-card p-6 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="sliders" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm">Yếu tố môi trường & Thói quen</h3>
+                  <p class="text-[11px] text-slate-400">Điều chỉnh thông số thực tế tại ngôi nhà bạn</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Dropdowns -->
+            <div class="space-y-3.5 text-xs sm:text-sm">
+              
+              <!-- 1. Mùa & Thời tiết tháng tới -->
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                  <i data-lucide="sun" class="w-4 h-4 text-amber-500"></i>
+                  <span>Mùa & Thời tiết tháng tới:</span>
+                </label>
+                <div class="custom-select-wrapper">
+                  <select id="factorSeason" class="custom-select">
+                    <option value="summer_peak">Hè nắng nóng cao điểm (>38°C) – Điều hòa & Tủ lạnh +30%</option>
+                    <option value="summer_normal">Mùa hè bình thường (32 - 35°C) – Làm mát +15%</option>
+                    <option value="spring_autumn">Mùa thu / Mùa xuân mát mẻ – Tải trung bình</option>
+                    <option value="winter_cold">Mùa đông rét đậm – Bình nóng lạnh +40%, Điều hòa -80%</option>
+                  </select>
+                  <i data-lucide="chevron-down" class="w-4 h-4 custom-select-icon"></i>
+                </div>
+              </div>
+
+              <!-- 2. Hướng phòng & Độ cách nhiệt -->
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                  <i data-lucide="home" class="w-4 h-4 text-blue-500"></i>
+                  <span>Hướng phòng & Độ cách nhiệt:</span>
+                </label>
+                <div class="custom-select-wrapper">
+                  <select id="factorInsulation" class="custom-select">
+                    <option value="poor_west">Hướng Tây nắng chiếu gay gắt, kính hở (+25% điện điều hòa)</option>
+                    <option value="normal" selected>Bình thường (Phòng kín vừa, có rèm che)</option>
+                    <option value="good">Cách nhiệt rất tốt, rèm cản nhiệt UV 100% (-10% tải)</option>
+                  </select>
+                  <i data-lucide="chevron-down" class="w-4 h-4 custom-select-icon"></i>
+                </div>
+              </div>
+
+              <!-- 3. Thói quen cài nhiệt độ điều hòa -->
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                  <i data-lucide="thermometer" class="w-4 h-4 text-rose-500"></i>
+                  <span>Thói quen cài nhiệt độ điều hòa:</span>
+                </label>
+                <div class="custom-select-wrapper">
+                  <select id="factorAcTemp" class="custom-select">
+                    <option value="cold_20_23">Cực lạnh (20°C - 23°C) – Ngốn điện gấp 1.35 lần!</option>
+                    <option value="standard_24_25" selected>Vừa phải (24°C - 25°C) – Tiêu chuẩn</option>
+                    <option value="eco_26_28">Tiết kiệm (26°C - 28°C kèm bật quạt) – Giảm 20% điện</option>
+                  </select>
+                  <i data-lucide="chevron-down" class="w-4 h-4 custom-select-icon"></i>
+                </div>
+              </div>
+
+              <!-- 4. Checkbox bù hao phí ngầm -->
+              <div class="pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between py-1">
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none flex-1 min-w-0">
+                    <input type="checkbox" id="factorStandby" checked class="w-4 h-4 text-teal-600 rounded-md border-slate-300 focus:ring-teal-500">
+                    <span class="text-xs text-slate-700 font-medium truncate sm:whitespace-normal">
+                      Bù hao tổn điện chờ ngầm (Router wifi, TV, sạc...) ~ 20 kWh/tháng
+                    </span>
+                  </label>
+                  <button type="button" onclick="openStandbyPowerInfoModal()" class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition cursor-pointer flex-shrink-0 ml-2" title="Xem giải thích vì sao cần bù hao tổn điện chờ ngầm" aria-label="Giải thích điện chờ ngầm">
+                    <i data-lucide="info" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 5. Thời gian ở nhà -->
+              <div class="flex items-center justify-between gap-3 pt-1">
+                <label class="text-xs font-semibold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                  <span>Thời gian ở nhà:</span>
+                </label>
+                <div class="custom-select-wrapper w-56 sm:w-64">
+                  <select id="factorWeekend" class="custom-select text-xs py-2">
+                    <option value="regular">Bình thường (Đi làm ngày tuần)</option>
+                    <option value="stay_more">Ở nhà nhiều / Nghỉ hè / Kỳ nghỉ lễ (+8%)</option>
+                  </select>
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5 custom-select-icon"></i>
+                </div>
+              </div>
+
+              <!-- 6. Cơ chế tính giá điện -->
+              <div class="flex items-center justify-between gap-3 pt-1">
+                <label class="text-xs font-semibold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i>
+                  <span>Cơ chế tính giá điện:</span>
+                </label>
+                <div class="custom-select-wrapper w-56 sm:w-64">
+                  <select id="pricingMode" class="custom-select text-xs py-2 font-semibold text-teal-700">
+                    <option value="evn_household">EVN Sinh Hoạt (6 Bậc Thang)</option>
+                    <option value="fixed_rate">Giá cố định (Phòng trọ / Kinh doanh)</option>
+                  </select>
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5 custom-select-icon"></i>
+                </div>
+              </div>
+
+              <!-- Fixed Rate input -->
+              <div id="fixedRateRow" class="hidden flex items-center justify-between gap-2 p-2.5 bg-amber-50 rounded-xl border border-amber-200">
+                <span class="text-xs text-amber-900 font-medium">Đơn giá cố định:</span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="pricingFixedRate" value="3500" class="w-24 px-2 py-1 text-xs border border-amber-300 rounded-lg text-right font-bold bg-white">
+                  <span class="text-xs text-amber-900">đ/kWh</span>
+                </div>
+              </div>
+
+              <!-- VAT Rate -->
+              <div class="flex items-center justify-between gap-3 pt-1">
+                <span class="text-xs text-slate-600">Thuế suất VAT:</span>
+                <select id="pricingVatRate" class="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium">
+                  <option value="8" selected>8% (Chính sách ưu đãi hiện hành)</option>
+                  <option value="10">10% (Thuế VAT tiêu chuẩn)</option>
+                </select>
+              </div>
+
+            </div>
+
+            <!-- Primary Action Button -->
+            <div class="pt-2">
+              <button id="btnRecalculate" onclick="triggerRecalculateAnimation()" class="w-full btn-primary py-3 px-4 text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                <i data-lucide="rotate-cw" id="recalcIcon" class="w-4 h-4 transition-transform"></i>
+                <span>Cập nhật & Tính lại</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Estimation Detailed Summary (5 Cols) -->
+          <div class="lg:col-span-5 space-y-4">
+            
+            <div class="dashboard-card p-6 space-y-4">
+              <h3 class="font-bold text-slate-900 text-sm border-b border-slate-100 pb-3 flex items-center gap-2">
+                <i data-lucide="receipt" class="w-4 h-4 text-teal-600"></i>
+                Bảng Dự Toán Chi Phí Chi Tiết
+              </h3>
+
+              <div class="space-y-3 text-xs sm:text-sm">
+                <div class="flex items-center justify-between text-slate-600">
+                  <span>Tiền điện trước VAT:</span>
+                  <strong id="estimateDetailSubtotal" class="text-slate-900 font-bold">0 đ</strong>
+                </div>
+                <div class="flex items-center justify-between text-slate-600">
+                  <span>Thuế VAT (8%):</span>
+                  <span id="estimateDetailVat" class="text-slate-700 font-semibold">0 đ</span>
+                </div>
+                <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between text-base">
+                  <span class="font-bold text-slate-900">Tổng hóa đơn dự kiến:</span>
+                  <strong id="estimateDetailTotal" class="text-teal-700 font-extrabold text-xl">0 đ</strong>
+                </div>
+                <hr class="border-slate-100 my-2">
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                  <span>Chi phí trung bình ngày:</span>
+                  <span id="estimateDetailDaily" class="font-semibold text-slate-700">0 đ/ngày</span>
+                </div>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                  <span>Giá bình quân / 1 số điện:</span>
+                  <span id="estimateDetailAvgRate" class="font-semibold text-slate-700">0 đ/kWh</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: THỐNG KÊ (ANALYTICS) -->
+      <!-- ========================================== -->
+      <div id="tab-analytics" class="tab-view hidden space-y-6">
+        
+
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- Doughnut Chart Card (7 Cols) -->
+          <div class="lg:col-span-7 dashboard-card p-6 space-y-4">
+            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-teal-600"></i>
+              Tỷ Lệ Tiêu Thụ Theo Nhóm Thiết Bị
+            </h3>
+            <div class="relative h-80 w-full flex items-center justify-center">
+              <canvas id="categoryDoughnutChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Category Breakdown Table (5 Cols) -->
+          <div class="lg:col-span-5 dashboard-card p-6 space-y-4">
+            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+              <i data-lucide="list" class="w-4 h-4 text-teal-600"></i>
+              Chi Tiết Từng Nhóm Thiết Bị
+            </h3>
+            <div id="categoryStatsTableContainer" class="space-y-3">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 5: GIÁ ĐIỆN EVN (EVN-PRICING) -->
+      <!-- ========================================== -->
+      <div id="tab-evn-pricing" class="tab-view hidden space-y-6">
+        
+
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- Current Tier Progress (7 Cols) -->
+          <div class="lg:col-span-7 dashboard-card p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i data-lucide="layers" class="w-4 h-4 text-teal-600"></i>
+                Bậc Thang Tiền Điện Gia Đình Bạn
+              </h3>
+              <span class="text-[11px] text-slate-400">Quyết định 1279/QĐ-BCT</span>
+            </div>
+
+            <div id="tierLadderContainer">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Official Tariff Table (5 Cols) -->
+          <div class="lg:col-span-5 dashboard-card p-6 space-y-4">
+            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+              <i data-lucide="table" class="w-4 h-4 text-teal-600"></i>
+              Bảng Đơn Giá 6 Bậc Chuẩn EVN
+            </h3>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left">
+                <thead>
+                  <tr class="border-b border-slate-200 text-slate-500">
+                    <th class="py-2 font-semibold">Bậc thang</th>
+                    <th class="py-2 font-semibold">Sản lượng (kWh)</th>
+                    <th class="py-2 font-semibold text-right">Đơn giá (đ)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                  <tr>
+                    <td class="py-2.5 font-bold text-teal-700">Bậc 1</td>
+                    <td class="py-2.5">0 - 50 kWh</td>
+                    <td class="py-2.5 text-right font-bold">1.984 đ</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 font-bold text-teal-700">Bậc 2</td>
+                    <td class="py-2.5">51 - 100 kWh</td>
+                    <td class="py-2.5 text-right font-bold">2.050 đ</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 font-bold text-amber-600">Bậc 3</td>
+                    <td class="py-2.5">101 - 200 kWh</td>
+                    <td class="py-2.5 text-right font-bold">2.380 đ</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 font-bold text-amber-600">Bậc 4</td>
+                    <td class="py-2.5">201 - 300 kWh</td>
+                    <td class="py-2.5 text-right font-bold">2.998 đ</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 font-bold text-rose-600">Bậc 5</td>
+                    <td class="py-2.5">301 - 400 kWh</td>
+                    <td class="py-2.5 text-right font-bold">3.350 đ</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 font-bold text-rose-600">Bậc 6</td>
+                    <td class="py-2.5">Từ 401 kWh trở lên</td>
+                    <td class="py-2.5 text-right font-bold">3.460 đ</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-[11px] text-amber-900 leading-relaxed">
+              <strong class="font-bold">Lưu ý:</strong> Đơn giá trên chưa bao gồm thuế VAT (8% theo chính sách hiện hành). Càng dùng nhiều điện, giá mỗi số điện phát sinh càng đắt!
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 6: MẸO TIẾT KIỆM (TIPS) -->
+      <!-- ========================================== -->
+      <div id="tab-tips" class="tab-view hidden space-y-6 pb-24 sm:pb-32">
+        
+        <!-- Hero Header: Cẩm Nang Tiết Kiệm & Thanh Tiến Độ Tinh Gọn -->
+        <div class="tips-hero-card relative overflow-hidden rounded-2xl text-white p-5 sm:p-6 lg:p-7 shadow-lg">
+          <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-6">
+            <div class="max-w-xl flex-1">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-bold mb-2.5 backdrop-blur-md">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-300"></i>
+                <span>Cẩm Nang Năng Lượng Xanh</span>
+              </div>
+              <h2 class="text-lg sm:text-xl lg:text-2xl font-black tracking-tight text-white leading-snug">
+                Giải Pháp Tiết Kiệm Điện Thông Minh
+              </h2>
+              <p class="text-xs sm:text-[13px] text-emerald-100/80 mt-1.5 leading-relaxed font-normal">
+                Áp dụng thói quen tối ưu giúp giảm từ <strong class="text-white font-bold">15% - 30%</strong> tiền điện mỗi tháng mà vẫn đảm bảo tiện nghi sinh hoạt.
+              </p>
+
+              <!-- Checklist Progress Tracker Capsule -->
+              <div class="mt-4 p-3 rounded-xl bg-black/20 backdrop-blur-md border border-white/15 max-w-md shadow-inner">
+                <div class="flex items-center justify-between text-xs font-semibold text-emerald-100 mb-1.5">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-bold text-[10px]">✓</span>
+                    Tiến độ áp dụng:
+                  </span>
+                  <span id="tipsProgressLabel" class="text-white font-bold text-xs">0 / 8 mẹo (0%)</span>
+                </div>
+                <div class="w-full bg-[#02281e]/90 border border-emerald-400/30 rounded-full h-2.5 p-0.5 overflow-hidden shadow-inner">
+                  <div id="tipsProgressBar" class="bg-gradient-to-r from-emerald-400 to-teal-300 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3 Quick Metrics Cards (Tinh Gọn & Hiện Đại) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2.5 w-full lg:w-72 flex-shrink-0">
+              <!-- Card 1: Tiết kiệm dự kiến -->
+              <div class="tips-glass-metric-card p-3 rounded-xl flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="piggy-bank" class="w-4.5 h-4.5"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[11px] text-emerald-200/90 font-medium leading-tight">Tiết kiệm dự kiến</p>
+                  <p class="text-xs sm:text-sm font-bold text-white tracking-tight mt-0.5 truncate">~150k - 350k đ/tháng</p>
+                </div>
+              </div>
+
+              <!-- Card 2: Giờ thấp điểm -->
+              <div class="tips-glass-metric-card p-3 rounded-xl flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-400/30 text-amber-300 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="clock" class="w-4.5 h-4.5"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[11px] text-amber-200/90 font-medium leading-tight">Khung giờ vàng</p>
+                  <p class="text-xs sm:text-sm font-bold text-white tracking-tight mt-0.5 truncate">22h00 - 4h00 sáng</p>
+                </div>
+              </div>
+
+              <!-- Card 3: Giảm phát thải CO2 -->
+              <div class="tips-glass-metric-card p-3 rounded-xl flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-teal-500/20 border border-teal-400/30 text-teal-300 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="leaf" class="w-4.5 h-4.5"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[11px] text-teal-200/90 font-medium leading-tight">Giảm phát thải CO₂</p>
+                  <p class="text-xs sm:text-sm font-bold text-white tracking-tight mt-0.5 truncate">~45 kg CO₂/tháng</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Biểu Đồ Khung Giờ Tiêu Thụ Điện Khuyến Nghị (EVN) -->
+        <div class="dashboard-card p-5 sm:p-6 space-y-3.5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4 text-teal-600"></i>
+                Biểu Đồ Khung Giờ Tiêu Thụ Điện Khuyến Nghị (EVN)
+              </h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">Phân bổ thiết bị công suất lớn vào giờ thấp điểm giúp tránh hóa đơn tiền điện bậc cao</p>
+            </div>
+            <!-- Legend -->
+            <div class="flex items-center gap-3 text-xs flex-wrap">
+              <span class="inline-flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Thấp điểm</span>
+              <span class="inline-flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Bình thường</span>
+              <span class="inline-flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Cao điểm</span>
+            </div>
+          </div>
+
+          <!-- 24H Timeline Visual Bar -->
+          <div class="space-y-2">
+            <div class="w-full h-7 rounded-lg overflow-hidden flex shadow-inner text-[10px] font-bold text-white select-none">
+              <div class="h-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-colors" style="width: 16.66%;" title="00:00 - 04:00: Thấp điểm">0h - 4h</div>
+              <div class="h-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center transition-colors" style="width: 22.91%;" title="04:00 - 09:30: Bình thường">4h - 9h30</div>
+              <div class="h-full bg-rose-500 hover:bg-rose-600 flex items-center justify-center transition-colors" style="width: 8.33%;" title="09:30 - 11:30: Cao điểm sáng">9h30-11h30</div>
+              <div class="h-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center transition-colors" style="width: 22.91%;" title="11:30 - 17:00: Bình thường">11h30 - 17h</div>
+              <div class="h-full bg-rose-500 hover:bg-rose-600 flex items-center justify-center transition-colors" style="width: 12.5%;" title="17:00 - 20:00: Cao điểm tối">17h - 20h</div>
+              <div class="h-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center transition-colors" style="width: 8.33%;" title="20:00 - 22:00: Bình thường">20h - 22h</div>
+              <div class="h-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-colors" style="width: 8.33%;" title="22:00 - 24:00: Thấp điểm">22h - 24h</div>
+            </div>
+
+            <!-- 3 Actionable Time Guidance Cards: Tinh gọn, súc tích -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+              <div class="p-3 rounded-xl bg-blue-50/70 border border-blue-200/60 text-xs">
+                <div class="font-bold text-blue-900 flex items-center gap-1.5 mb-0.5">
+                  <i data-lucide="moon" class="w-3.5 h-3.5 text-blue-600"></i>
+                  Giờ Thấp Điểm (22h - 4h)
+                </div>
+                <p class="text-blue-800 text-[11px] leading-relaxed">
+                  Lý tưởng để <strong>hẹn giờ sạc xe điện, bơm nước, máy giặt, máy sấy</strong>. Điện áp ổn định nhất.
+                </p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/60 text-xs">
+                <div class="font-bold text-emerald-900 flex items-center gap-1.5 mb-0.5">
+                  <i data-lucide="sun" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  Giờ Bình Thường (Sinh hoạt)
+                </div>
+                <p class="text-emerald-800 text-[11px] leading-relaxed">
+                  Sinh hoạt, làm việc bình thường. Duy trì thói quen tắt đèn và thiết bị khi ra khỏi phòng.
+                </p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-rose-50/70 border border-rose-200/60 text-xs">
+                <div class="font-bold text-rose-900 flex items-center gap-1.5 mb-0.5">
+                  <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-600"></i>
+                  Giờ Cao Điểm (9h30-11h30 & 17h-20h)
+                </div>
+                <p class="text-rose-800 text-[11px] leading-relaxed">
+                  <strong>Tránh bật đồng thời</strong> bình nóng lạnh, bàn ủi, bếp từ để không quá tải và tránh nhảy aptomat.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Advisor Tips Box (Dành riêng cho gia đình bạn) -->
+        <div class="dashboard-card p-6 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+                Phân Tích AI Dành Riêng Cho Thiết Bị Nhà Bạn
+              </h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">Tự động phát hiện thiết bị ngốn nhiều điện nhất và tính toán số tiền tiết kiệm được</p>
+            </div>
+            <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              AI Smart Advisor
+            </span>
+          </div>
+
+          <div id="smartTipsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Bộ Quy Tắc Tiết Kiệm Thực Chiến (Categories & Actionable Cards) -->
+        <div class="space-y-4">
+          <!-- Filter Header Row -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">Bộ Quy Tắc Tiết Kiệm Năng Lượng Thực Chiến</h3>
+              <p class="text-xs text-slate-500">Đánh dấu tích vào các mẹo gia đình bạn đang áp dụng để theo dõi tiến độ</p>
+            </div>
+            
+            <!-- Category Filter Pills -->
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl flex-wrap">
+              <button onclick="filterTipsCategory('all')" data-tip-filter="all" class="tip-filter-btn active px-3 py-1.5 rounded-lg text-xs font-bold transition">Tất cả (8)</button>
+              <button onclick="filterTipsCategory('cooling')" data-tip-filter="cooling" class="tip-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition">❄️ Điều hòa</button>
+              <button onclick="filterTipsCategory('kitchen')" data-tip-filter="kitchen" class="tip-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition">🧊 Tủ lạnh & Bếp</button>
+              <button onclick="filterTipsCategory('water')" data-tip-filter="water" class="tip-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition">🚿 Nước & Giặt</button>
+              <button onclick="filterTipsCategory('standby')" data-tip-filter="standby" class="tip-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition">🔌 Điện chờ & Đèn</button>
+            </div>
+          </div>
+
+          <!-- Cards Grid (8 items) -->
+          <div id="tipsCardsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Rendered dynamically or statically enhanced -->
+          </div>
+        </div>
+
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 7: CÀI ĐẶT (SETTINGS) -->
+      <!-- ========================================== -->
+      <div id="tab-settings" class="tab-view hidden space-y-6">
+        
+
+
+        <!-- KHUNG THÔNG TIN HỘ GIA ĐÌNH (CĂN GIỮA ĐẸP MẮT & HÀI HÒA) -->
+        <div class="max-w-3xl mx-auto w-full">
+          <div class="dashboard-card p-6 sm:p-8 space-y-6">
+            <div>
+              <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5">
+                <i data-lucide="users" class="w-5 h-5 text-teal-600 dark:text-teal-400"></i>
+                Thông Tin Hộ Gia Đình
+              </h3>
+
+              <div class="space-y-4 text-xs sm:text-sm">
+                <!-- 2 cột: Số thành viên & Khu vực sinh sống -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Số thành viên -->
+                  <div>
+                    <label class="block font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Số thành viên trong nhà:</label>
+                    <input type="number" id="settingsMembers" min="1" max="20" value="4" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition text-slate-800 dark:text-slate-100">
+                  </div>
+
+                  <!-- Khu vực sinh sống -->
+                  <div>
+                    <label class="block font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Khu vực sinh sống:</label>
+                    <div class="custom-select-wrapper">
+                      <select id="settingsCitySelect" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm custom-select text-slate-800 dark:text-slate-100">
+                        <!-- Đổ động toàn bộ 63 tỉnh thành qua app.js -->
+                      </select>
+                      <i data-lucide="chevron-down" class="w-3.5 h-3.5 custom-select-icon"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2 cột: Loại hình nhà ở & Mã khách hàng EVN -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Loại hình nhà ở -->
+                  <div>
+                    <label class="block font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Loại hình nhà ở:</label>
+                    <div class="custom-select-wrapper">
+                      <select id="settingsHousingSelect" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm custom-select text-slate-800 dark:text-slate-100">
+                        <option value="apartment">Căn hộ chung cư</option>
+                        <option value="townhouse">Nhà phố / Nhà ống</option>
+                        <option value="rental">Phòng trọ / Căn hộ dịch vụ</option>
+                        <option value="villa">Nhà vườn / Biệt thự</option>
+                      </select>
+                      <i data-lucide="chevron-down" class="w-3.5 h-3.5 custom-select-icon"></i>
+                    </div>
+                  </div>
+
+                  <!-- Mã khách hàng EVN -->
+                  <div>
+                    <label class="block font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Mã khách hàng EVN (Tùy chọn):</label>
+                    <input type="text" id="settingsEvnCodeInput" placeholder="Ví dụ: PD0123456789" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition text-slate-800 dark:text-slate-100 placeholder-slate-400">
+                  </div>
+                </div>
+
+                <!-- Mục đích sử dụng -->
+                <div>
+                  <label class="block font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Mục đích sử dụng:</label>
+                  <div class="custom-select-wrapper">
+                    <select id="settingsPurposeSelect" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm custom-select text-slate-800 dark:text-slate-100">
+                      <option value="Hộ gia đình sinh hoạt thông thường" selected>Hộ gia đình sinh hoạt thông thường</option>
+                      <option value="Phòng trọ / Căn hộ dịch vụ cho thuê">Phòng trọ / Căn hộ dịch vụ cho thuê</option>
+                      <option value="Hộ kinh doanh kết hợp nhà ở">Hộ kinh doanh kết hợp nhà ở</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 custom-select-icon"></i>
+                  </div>
+                </div>
+
+                <!-- Info callout box for visual balance -->
+                <div class="p-4 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/70 rounded-2xl text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
+                  <div class="font-bold flex items-center gap-1.5 mb-1 text-emerald-800 dark:text-emerald-300">
+                    <i data-lucide="info" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                    Định mức tính toán tự động
+                  </div>
+                  Số lượng thành viên & vị trí tỉnh thành sẽ được áp dụng để ước lượng mức hao phí điện ngầm, làm mát và nước nóng tắm chuẩn xác nhất.
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button id="saveSettingsBtn" onclick="saveSettingsForm(event)" class="btn-primary w-full sm:w-auto px-7 py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95 transition-all">
+                <i data-lucide="check" class="w-4 h-4"></i> Lưu cài đặt
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VÌ SAO CHỌN EVN ESTIMATOR? (TEMPLATE ẢNH 3) -->
+        <!-- ========================================== -->
+        <div class="why-evn-section space-y-6 pt-4">
+          <div class="text-center max-w-xl mx-auto space-y-1.5">
+            <h3 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              Vì sao chọn EVN Estimator?
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Công cụ tính toán & mô phỏng điện năng sinh hoạt chuẩn xác, minh bạch và an toàn hàng đầu
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Card 1: Chuẩn biểu giá EVN -->
+            <div class="why-evn-card group">
+              <div class="why-evn-icon-wrap bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30">
+                <i data-lucide="calculator" class="w-5 h-5"></i>
+              </div>
+              <h4 class="font-bold text-base text-slate-800 dark:text-white tracking-tight mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                Chuẩn Biểu Giá EVN
+              </h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Áp dụng 100% biểu giá 6 bậc mới nhất theo Quyết định 1279/QĐ-BCT, tự động tính lũy tiến và thuế VAT 8% chính xác từng số điện.
+              </p>
+            </div>
+
+            <!-- Card 2: Mô phỏng sát thực tế -->
+            <div class="why-evn-card group">
+              <div class="why-evn-icon-wrap bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
+                <i data-lucide="cpu" class="w-5 h-5"></i>
+              </div>
+              <h4 class="font-bold text-base text-slate-800 dark:text-white tracking-tight mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                Mô Phỏng Sát Thực Tế
+              </h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Đo lường chi tiết công suất thực theo thông số hãng, công nghệ Inverter, chế độ nhiệt độ điều hòa và thói quen sinh hoạt.
+              </p>
+            </div>
+
+            <!-- Card 3: Bảo mật & Riêng tư -->
+            <div class="why-evn-card group">
+              <div class="why-evn-icon-wrap bg-sky-50 text-sky-600 border border-sky-200/80 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+              </div>
+              <h4 class="font-bold text-base text-slate-800 dark:text-white tracking-tight mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                Bảo Mật Tuyệt Đối
+              </h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Toàn bộ dữ liệu thiết bị và hóa đơn lưu trữ an toàn trong máy bạn (Local Storage), hoàn toàn không thu thập hay chia sẻ ra ngoài.
+              </p>
+            </div>
+
+            <!-- Card 4: Gợi ý tiết kiệm AI -->
+            <div class="why-evn-card group">
+              <div class="why-evn-icon-wrap bg-purple-50 text-purple-600 border border-purple-200/80 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30">
+                <i data-lucide="sparkles" class="w-5 h-5"></i>
+              </div>
+              <h4 class="font-bold text-base text-slate-800 dark:text-white tracking-tight mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                Tối Ưu 15 - 30% Hóa Đơn
+              </h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Thuật toán thông minh phân tích thiết bị tiêu hao lớn, cảnh báo giờ cao điểm EVN giúp gia đình bạn tránh nhảy bậc giá cao.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- MODAL: THÊM / CHỈNH SỬA THIẾT BỊ -->
+  <div id="applianceModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-5xl w-full p-5 sm:p-7 shadow-2xl border border-slate-200 relative my-auto max-h-[94vh] flex flex-col animate-in fade-in zoom-in-95">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 flex-shrink-0">
+        <h3 id="modalTitle" class="font-bold text-slate-900 text-base sm:text-lg flex items-center gap-2">
+          <i data-lucide="cpu" class="w-5 h-5 text-teal-600"></i> Thêm thiết bị điện mới
+        </h3>
+        <button onclick="closeApplianceModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Form Container -->
+      <div class="overflow-y-auto flex-1 pr-1 space-y-4">
+        
+        <!-- SMART SEARCH & AUTO-FILL ASSISTANT (Span Full Width) -->
+        <div class="p-3 bg-gradient-to-r from-teal-50/70 to-emerald-50/50 rounded-2xl border border-teal-100/80">
+          <div class="flex items-center justify-between mb-2 gap-2">
+            <label for="modalSmartSearchInput" class="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-teal-600"></i>
+              <span>Tra cứu mẫu thiết bị</span>
+            </label>
+            <button type="button" onclick="openCameraScannerModal()" class="px-2.5 py-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs">
+              <img src="assets/camera-scan-icon.png?v=20261011_v6" alt="AI Scan" class="w-3.5 h-3.5 object-contain brightness-0 invert">
+              <span>Quét ảnh / AI</span>
+            </button>
+          </div>
+
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-teal-600">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <input 
+              type="text" 
+              id="modalSmartSearchInput" 
+              autocomplete="off"
+              placeholder="Gõ tên, hãng hoặc model (vd: Daikin, Toshiba, Senko...)" 
+              class="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-white border border-teal-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition shadow-2xs placeholder:text-slate-400"
+            >
+            <button 
+              type="button" 
+              id="modalClearSearchBtn" 
+              class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600"
+              title="Xóa tìm kiếm"
+            >
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Khung danh sách kết quả gợi ý trực quan -->
+          <div id="modalSuggestionsContainer" class="hidden mt-2.5 max-h-60 overflow-y-auto space-y-2 pr-1 rounded-xl">
+            <!-- Rendered by app.js -->
+          </div>
+        </div>
+
+        <form id="applianceForm" class="space-y-4">
+          <input type="hidden" id="formImageUrl" value="">
+          
+          <!-- TWO-COLUMN HORIZONTAL GRID LAYOUT -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+            
+            <!-- LEFT COLUMN: THÔNG TIN THIẾT BỊ & ĐỊNH DANH -->
+            <div class="space-y-3.5 bg-slate-50/50 p-4 rounded-2xl border border-slate-200/80">
+              <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60">
+                <i data-lucide="info" class="w-4 h-4 text-teal-600"></i>
+                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Thông tin thiết bị</h4>
+              </div>
+
+              <!-- Tên thiết bị -->
+              <div>
+                <label for="formName" class="block text-xs font-semibold text-slate-700 mb-1">Tên thiết bị <span class="text-rose-500">*</span></label>
+                <input type="text" id="formName" required placeholder="Ví dụ: Nồi cơm điện, Quạt cây, Tủ lạnh..." class="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition">
+              </div>
+
+              <!-- Nhóm thiết bị & Hãng sản xuất -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Nhóm thiết bị</label>
+                  <div class="custom-select-wrapper">
+                    <select id="formCategory" class="custom-select text-xs py-2">
+                      <option value="cooling">Điều hòa & Quạt mát</option>
+                      <option value="fridge">Tủ lạnh & Tủ đông</option>
+                      <option value="water_laundry">Giặt sấy & Nước nóng</option>
+                      <option value="kitchen">Nhà bếp & Nấu nướng</option>
+                      <option value="electronics">Thiết bị số & Giải trí</option>
+                      <option value="others">Chiếu sáng & Khác</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 custom-select-icon"></i>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Hãng sản xuất</label>
+                  <input type="text" id="formBrand" placeholder="Toshiba, Daikin, Senko..." class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl">
+                </div>
+              </div>
+
+              <!-- Model & Vị trí phòng -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Model / Mã sản phẩm</label>
+                  <input type="text" id="formModel" placeholder="Ví dụ: RC-10JH1, FTKB25..." class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Vị trí đặt</label>
+                  <input type="text" id="formRoom" placeholder="Bếp, Khách, Phòng ngủ..." class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl">
+                </div>
+              </div>
+
+              <!-- Công suất & Inverter -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center pt-1">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Công suất danh định <span class="text-rose-500">*</span></label>
+                  <div class="relative">
+                    <input type="number" id="formPowerWatts" required min="1" max="15000" placeholder="850" class="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl pr-10">
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-semibold">W</span>
+                  </div>
+                </div>
+                
+                <div class="pt-2 sm:pt-4">
+                  <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="formIsInverter" checked class="w-4 h-4 text-teal-600 rounded-md border-slate-300 focus:ring-teal-500">
+                    <span class="text-xs font-semibold text-slate-800">Công nghệ Inverter (Biến tần)</span>
+                  </label>
+                  <p class="text-[11px] text-slate-400 mt-0.5">Tiết kiệm điện khi duy trì tải</p>
+                </div>
+              </div>
+
+              <!-- Tùy chỉnh nâng cao: Hệ số tải -->
+              <div class="pt-1">
+                <details class="text-xs text-slate-600">
+                  <summary class="cursor-pointer font-medium text-teal-700 select-none flex items-center gap-1">
+                    <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+                    <span>Tùy chỉnh hệ số tải thực tế (Nâng cao)</span>
+                  </summary>
+                  <div class="mt-2 p-2.5 bg-white rounded-xl border border-slate-200 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-medium text-slate-600">Hệ số tải trung bình (0.1 - 1.0):</span>
+                      <input type="number" id="formLoadFactor" step="0.05" min="0.1" max="1.0" value="0.55" class="w-20 px-2 py-1 text-xs border rounded-lg text-right">
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-tight">Inverter ~0.55, Quạt/đèn ~0.95, Tủ lạnh ~0.24 - 0.40.</p>
+                  </div>
+                </details>
+              </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: TẦN SUẤT SỬ DỤNG & CÀI ĐẶT ĐIỀU HÒA MULTI-MODE -->
+            <div class="space-y-3.5">
+              
+              <!-- Tần suất sử dụng -->
+              <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-200/80 space-y-2.5">
+                <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60">
+                  <i data-lucide="clock" class="w-4 h-4 text-teal-600"></i>
+                  <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Thời gian sử dụng</h4>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Giờ / ngày</label>
+                    <input type="number" id="formHoursPerDay" step="0.1" min="0.1" max="24" value="8" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Ngày / tháng</label>
+                    <input type="number" id="formDaysPerMonth" min="1" max="31" value="30" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Số lượng</label>
+                    <input type="number" id="formQuantity" min="1" max="50" value="1" class="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl">
+                  </div>
+                </div>
+              </div>
+
+              <!-- TÙY CHỌN CHUYÊN SÂU ĐIỀU HÒA (MULTI-MODE SYSTEM) -->
+              <div id="acAdvancedSettings" class="p-3.5 bg-gradient-to-br from-sky-50/90 via-teal-50/70 to-emerald-50/50 rounded-2xl border border-sky-200/80 space-y-3">
+                
+                <div class="flex items-center gap-2 pb-1.5 border-b border-sky-100">
+                  <div class="w-6 h-6 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shadow-2xs">
+                    <i data-lucide="snowflake" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <span class="text-xs font-bold text-sky-950">Cài đặt Điều hòa</span>
+                </div>
+
+                <!-- Nhiệt độ cài đặt & Chế độ vận hành chính -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label for="formAcTemp" class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                      <i data-lucide="thermometer" class="w-3.5 h-3.5 text-rose-500"></i>
+                      <span>Nhiệt độ cài đặt:</span>
+                    </label>
+                    <div class="custom-select-wrapper">
+                      <select id="formAcTemp" class="custom-select text-xs py-2">
+                        <option value="18">18°C (+45%)</option>
+                        <option value="20">20°C (+35%)</option>
+                        <option value="22">22°C (+25%)</option>
+                        <option value="24">24°C (+10%)</option>
+                        <option value="25">25°C (+5%)</option>
+                        <option value="26" selected>26°C (Chuẩn EVN)</option>
+                        <option value="27">27°C (-8%)</option>
+                        <option value="28">28°C (-15%)</option>
+                        <option value="30">30°C (-25%)</option>
+                      </select>
+                      <i data-lucide="chevron-down" class="w-3.5 h-3.5 custom-select-icon"></i>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label for="formAcBaseMode" class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                      <i data-lucide="compass" class="w-3.5 h-3.5 text-teal-600"></i>
+                      <span>Chế độ chính:</span>
+                    </label>
+                    <div class="custom-select-wrapper">
+                      <select id="formAcBaseMode" class="custom-select text-xs py-2">
+                        <option value="cool" selected>❄️ Làm mát (Cool)</option>
+                        <option value="dry">💧 Hút ẩm (Dry)</option>
+                        <option value="fan">🌀 Quạt gió (Fan)</option>
+                        <option value="heat">☀️ Sưởi ấm (Heat)</option>
+                      </select>
+                      <i data-lucide="chevron-down" class="w-3.5 h-3.5 custom-select-icon"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CÁC CHẾ ĐỘ / TÍNH NĂNG BẬT KÈM ĐỒNG THỜI (MULTI-SELECT PILLS) -->
+                <div>
+                  <div class="mb-1.5">
+                    <span class="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                      <i data-lucide="layers" class="w-3.5 h-3.5 text-amber-500"></i>
+                      <span>Tính năng bật kèm:</span>
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-2 flex-wrap" id="acFeaturePillsContainer">
+                    <button type="button" class="ac-mode-pill" data-mode="eco" onclick="toggleAcFeaturePill('eco')">
+                      <span>🌿 Eco (-18%)</span>
+                      <span class="check-indicator text-teal-700 font-bold">✓</span>
+                    </button>
+                    <button type="button" class="ac-mode-pill" data-mode="turbo" onclick="toggleAcFeaturePill('turbo')">
+                      <span>⚡ Turbo (+25%)</span>
+                      <span class="check-indicator text-teal-700 font-bold">✓</span>
+                    </button>
+                    <button type="button" class="ac-mode-pill" data-mode="sleep" onclick="toggleAcFeaturePill('sleep')">
+                      <span>🌙 Sleep (-12%)</span>
+                      <span class="check-indicator text-teal-700 font-bold">✓</span>
+                    </button>
+                    <button type="button" class="ac-mode-pill" data-mode="quiet" onclick="toggleAcFeaturePill('quiet')">
+                      <span>🔇 Siêu êm (-10%)</span>
+                      <span class="check-indicator text-teal-700 font-bold">✓</span>
+                    </button>
+                    <button type="button" class="ac-mode-pill active" data-mode="fan_assist" onclick="toggleAcFeaturePill('fan_assist')">
+                      <span>🌪️ Kèm quạt (-8%)</span>
+                      <span class="check-indicator text-teal-700 font-bold">✓</span>
+                    </button>
+                    <button type="button" class="ac-mode-pill" data-mode="ion" onclick="toggleAcFeaturePill('ion')">
+                      <span>🫧 Lọc khí Ion (+15W)</span>
+                      <span class="check-indicator text-teal-700 font-bold">✓</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Bottom Actions (Full Width) -->
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 flex-shrink-0">
+            <button type="button" onclick="closeApplianceModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+              Hủy
+            </button>
+            <button type="submit" class="btn-primary px-5 py-2 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="check" class="w-4 h-4"></i> Lưu thiết bị
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: KHO MẪU THIẾT BỊ PHỔ BIẾN (PRESETS) -->
+  <div id="presetsModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 relative my-8 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <!-- Icon Vali / Túi đồ có trái tim (Chuẩn Ảnh 3) -->
+          <svg class="w-6 h-6 text-slate-900 dark:text-white flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2.5" y="6" width="19" height="15" rx="3.5" stroke="currentColor" stroke-width="2"/>
+            <path d="M8.5 6V3.8C8.5 2.8 9.3 2 10.3 2H13.7C14.7 2 15.5 2.8 15.5 3.8V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="6.5" y1="8.5" x2="6.5" y2="18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="17.5" y1="8.5" x2="17.5" y2="18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M12 12.8C11.3 11.3 9.4 11.2 8.7 12.4C7.9 13.8 9.4 15.3 12 17C14.6 15.3 16.1 13.8 15.3 12.4C14.6 11.2 12.7 11.3 12 12.8Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h3 class="font-bold text-slate-900 dark:text-white text-base">
+            Kho Mẫu Thiết Bị Gia Đình Việt Nam
+          </h3>
+        </div>
+        <button onclick="closePresetsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Container scrollable -->
+      <div id="presetsContainer" class="overflow-y-auto flex-1 pr-1 space-y-4">
+        <!-- Rendered by presets.js & app.js -->
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-end flex-shrink-0">
+        <button onclick="closePresetsModal()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
+          Đóng cửa sổ
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: QUÉT HÌNH ẢNH THIẾT BỊ BẰNG CAMERA HOẶC TẢI ẢNH (AI SCANNER) -->
+  <div id="cameraScannerModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 relative my-6 animate-in fade-in zoom-in-95 flex flex-col max-h-[92vh]">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 flex-shrink-0">
+        <div>
+          <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+            <img src="assets/camera-scan-icon.png?v=20261011_v6" alt="AI Scanner" class="w-6 h-6 object-contain">
+            <span>Quét & Nhận Diện Thiết Bị Bằng AI</span>
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">Bật camera quay thiết bị hoặc tải ảnh chụp từ điện thoại lên</p>
+        </div>
+        <button onclick="closeCameraScannerModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Viewfinder / Preview Screen -->
+      <div class="relative bg-slate-950 rounded-2xl overflow-hidden aspect-video sm:aspect-4/3 flex items-center justify-center border-2 border-slate-800 shadow-inner flex-shrink-0">
+        <video id="scannerVideo" playsinline autoplay muted class="w-full h-full object-cover hidden"></video>
+        <img id="scannerPhotoPreview" class="w-full h-full object-contain hidden" alt="Ảnh chụp thiết bị">
+        <canvas id="scannerCanvas" class="hidden"></canvas>
+
+        <!-- Scanning overlay animation -->
+        <div id="scannerOverlay" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-5">
+          <div class="flex justify-between">
+            <span class="w-8 h-8 border-t-3 border-l-3 border-teal-400 rounded-tl-lg"></span>
+            <span class="w-8 h-8 border-t-3 border-r-3 border-teal-400 rounded-tr-lg"></span>
+          </div>
+          <div id="scannerLaser" class="w-full h-0.5 bg-gradient-to-r from-transparent via-teal-400 to-transparent shadow-[0_0_12px_#2dd4bf] animate-bounce"></div>
+          <div class="flex justify-between">
+            <span class="w-8 h-8 border-b-3 border-l-3 border-teal-400 rounded-bl-lg"></span>
+            <span class="w-8 h-8 border-b-3 border-r-3 border-teal-400 rounded-br-lg"></span>
+          </div>
+        </div>
+
+        <!-- Initial Placeholder when camera not yet active -->
+        <div id="scannerPlaceholder" class="text-center p-6 text-slate-400 space-y-3">
+          <div class="w-14 h-14 rounded-2xl bg-slate-800/80 text-teal-400 flex items-center justify-center mx-auto shadow-md">
+            <i data-lucide="camera" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-slate-200">Sẵn sàng nhận diện thiết bị</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Bấm "Bật Camera" hoặc "Tải ảnh lên" để bắt đầu</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="mt-4 flex items-center justify-between gap-2.5 flex-wrap flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <button type="button" id="startCameraBtn" onclick="startScannerCamera()" class="btn-primary py-2 px-3.5 text-xs font-bold flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="video" class="w-4 h-4"></i> Bật Camera
+          </button>
+          <button type="button" id="captureBtn" onclick="captureAndRecognize()" class="hidden px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="aperture" class="w-4 h-4"></i> Chụp & Quét AI
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 border border-slate-200">
+            <i data-lucide="upload" class="w-4 h-4 text-slate-500"></i> Tải ảnh từ máy
+            <input type="file" id="scannerFileInput" accept="image/*" class="hidden" onchange="handleScannerFileUpload(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- AI Recognition Results Container -->
+      <div id="scannerResultsContainer" class="hidden mt-4 pt-3 border-t border-slate-100 overflow-y-auto space-y-2 flex-1 pr-1">
+        <!-- Rendered by app.js -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: HỒ SƠ HỘ GIA ĐÌNH & AVATAR -->
+  <div id="userProfileModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative my-6 animate-in fade-in zoom-in-95">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-5">
+        <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+          <i data-lucide="user-check" class="w-5 h-5 text-teal-600 dark:text-teal-400"></i> Hồ Sơ Hộ Gia Đình
+        </h3>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="profileForm" onsubmit="saveUserProfile(event)" class="space-y-4">
+        
+        <!-- Avatar Preview & Upload -->
+        <div class="p-4 bg-slate-50/90 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs">
+          <!-- Hidden file input: accepts any image format -->
+          <input type="file" id="modalAvatarFileInput" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
+
+          <div class="flex items-center gap-4">
+            <!-- Clickable Avatar Preview Circle: Native Label trigger -->
+            <label for="modalAvatarFileInput" class="relative cursor-pointer group flex-shrink-0 block" title="Nhấn vào đây để tải ảnh từ máy tính / điện thoại">
+              <div id="modalAvatarPreview" class="w-16 h-16 rounded-2xl bg-teal-700 text-white flex items-center justify-center text-xl font-bold overflow-hidden shadow-sm border-2 border-white dark:border-slate-700 ring-2 ring-teal-500/20 group-hover:ring-teal-500/60 transition">
+                TN
+              </div>
+              <!-- Hover overlay with camera icon -->
+              <div class="absolute inset-0 rounded-2xl bg-slate-900/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-medium transition backdrop-blur-2xs pointer-events-none">
+                <i data-lucide="camera" class="w-4 h-4 mb-0.5"></i>
+                <span>Đổi ảnh</span>
+              </div>
+              <!-- Camera badge on bottom right -->
+              <div class="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-teal-600 group-hover:bg-teal-700 text-white shadow-md transition pointer-events-none">
+                <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+              </div>
+            </label>
+
+            <!-- Upload Controls & Presets -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <h4 class="text-xs font-bold text-slate-900 dark:text-white">Ảnh đại diện</h4>
+              </div>
+              
+              <!-- Direct action buttons -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Native Label Button for File Upload -->
+                <label for="modalAvatarFileInput" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer active:scale-95">
+                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                  <span>Tải ảnh từ máy</span>
+                </label>
+                <!-- Reset to Initials -->
+                <button type="button" id="removeAvatarBtn" onclick="resetAvatarToInitials()" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium transition shadow-2xs cursor-pointer" title="Xóa ảnh và dùng chữ cái viết tắt">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                  <span>Đặt lại</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tên người dùng / Hộ gia đình (Chỉnh sửa được) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tên hồ sơ / Gia đình <span class="text-rose-500">*</span></label>
+          <input type="text" id="profileNameInput" required placeholder="Ví dụ: Gia đình chị Hạnh, Căn hộ 802..." class="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition text-slate-900 dark:text-white">
+        </div>
+
+        <!-- Thông tin hộ gia đình -->
+        <div class="p-4 bg-slate-50/90 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-2">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-teal-600 dark:text-teal-400"></i> Thông tin hộ gia đình
+            </span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2.5 text-xs">
+            <div class="bg-white dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+              <span class="text-slate-400 dark:text-slate-500 block text-[11px] mb-0.5">Số thành viên</span>
+              <span id="profileViewMembers" class="font-bold text-slate-800 dark:text-slate-100">4 thành viên</span>
+            </div>
+            <div class="bg-white dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+              <span class="text-slate-400 dark:text-slate-500 block text-[11px] mb-0.5">Khu vực sinh sống</span>
+              <span id="profileViewCity" class="font-bold text-slate-800 dark:text-slate-100 truncate block">TP. Hồ Chí Minh</span>
+            </div>
+            <div class="bg-white dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+              <span class="text-slate-400 dark:text-slate-500 block text-[11px] mb-0.5">Loại hình nhà ở</span>
+              <span id="profileViewHousing" class="font-bold text-slate-800 dark:text-slate-100">Căn hộ chung cư</span>
+            </div>
+            <div class="bg-white dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+              <span class="text-slate-400 dark:text-slate-500 block text-[11px] mb-0.5">Mã khách hàng EVN</span>
+              <span id="profileViewEvnCode" class="font-bold text-slate-800 dark:text-slate-100">Chưa thiết lập</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" onclick="closeProfileModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer">
+            Đóng
+          </button>
+          <button type="submit" class="btn-primary px-5 py-2.5 text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer">
+            <i data-lucide="check" class="w-4 h-4"></i> Lưu hồ sơ
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DONATE / UNG HO TAC GIA (CHUAN THEO TEMPLATE ANH 1) -->
+  <div id="donateModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onclick="if(event.target === this) closeDonateModal()">
+    <div class="bg-white rounded-[28px] max-w-sm sm:max-w-[390px] w-full p-6 sm:p-7 shadow-2xl border border-slate-100 relative my-6 animate-in fade-in zoom-in-95 flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between mb-5 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl select-none">☕</span>
+          <h3 class="font-extrabold text-slate-900 text-xl tracking-tight">Donate</h3>
+        </div>
+        <button onclick="closeDonateModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition" aria-label="Đóng cửa sổ">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex flex-col items-center">
+        <!-- Elevated QR Code Card (Trắng nổi bật giữa nền) -->
+        <div class="w-full max-w-[280px] bg-white rounded-2xl p-4 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 flex items-center justify-center transition hover:shadow-lg">
+          <img src="assets/donate-qr.png" alt="Mã VietQR Techcombank Donate" class="w-full h-auto object-contain select-none">
+        </div>
+
+        <!-- Bank Details Card (Khung bo góc chuẩn Ảnh 1, căn thẳng hàng hoàn hảo) -->
+        <div class="mt-6 w-full bg-[#f8fafc] rounded-2xl p-4 sm:p-4.5 space-y-2.5 text-xs sm:text-[13px] border border-slate-100">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 font-medium text-left">Ngân hàng:</span>
+            <span class="font-bold text-slate-900 text-sm text-right">Techcombank</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 font-medium text-left">Số tài khoản:</span>
+            <span onclick="copyBankAccount()" class="font-black text-[#008f7a] hover:text-[#006b5b] text-sm tracking-wider cursor-pointer hover:underline text-right transition active:scale-95 select-all" title="Bấm để sao chép số tài khoản">5057552007</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 font-medium text-left">Chủ tài khoản:</span>
+            <span class="font-black text-slate-900 tracking-wide uppercase text-sm text-right">LE BICH VAN</span>
+          </div>
+        </div>
+
+        <!-- Bottom Playful Text (Bỏ icon trà sữa & lấp lánh, đổi màu xanh lá chuẩn màu STK) -->
+        <div class="mt-6 text-center">
+          <p class="font-bold text-[#008f7a] text-sm sm:text-[15px] tracking-wide">
+            Ủng hộ chủ sốp ly trà đá zới nhe !
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- WEATHER LOCATION SELECTOR MODAL (3D BÓNG KÍNH HÀI HÒA)   -->
+  <!-- ======================================================== -->
+  <div id="weatherLocationModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto" onclick="if(event.target === this) closeWeatherLocationModal()">
+    <div class="weather-modal-card rounded-[28px] max-w-lg w-full p-6 sm:p-7 shadow-2xl relative my-6 animate-in fade-in zoom-in-95 flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between mb-5 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <!-- 3D Weather App Squircle Icon (Phong cách Ảnh 2, thiết kế vector 3D sắc nét) -->
+          <div class="w-12 h-12 rounded-[15px] shadow-lg shadow-sky-500/25 flex items-center justify-center flex-shrink-0 overflow-hidden relative border border-white/40">
+            <svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="modalWeatherSkyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8"/>
+                  <stop offset="55%" stop-color="#0ea5e9"/>
+                  <stop offset="100%" stop-color="#0284c7"/>
+                </linearGradient>
+                <linearGradient id="modalWeatherGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+                  <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+                </linearGradient>
+                <radialGradient id="modalWeatherSun" cx="35%" cy="35%" r="65%">
+                  <stop offset="0%" stop-color="#fffbeb"/>
+                  <stop offset="40%" stop-color="#fde047"/>
+                  <stop offset="75%" stop-color="#f59e0b"/>
+                  <stop offset="100%" stop-color="#d97706"/>
+                </radialGradient>
+                <linearGradient id="modalCloudGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="65%" stop-color="#f0f9ff"/>
+                  <stop offset="100%" stop-color="#bae6fd"/>
+                </linearGradient>
+                <filter id="modalCloudShadow" x="-15%" y="-15%" width="130%" height="130%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#0369a1" flood-opacity="0.35"/>
+                </filter>
+              </defs>
+              <rect width="48" height="48" rx="14" fill="url(#modalWeatherSkyGrad)"/>
+              <rect x="0.5" y="0.5" width="47" height="47" rx="13.5" stroke="#7dd3fc" stroke-opacity="0.7"/>
+              <rect x="1" y="1" width="46" height="23" rx="13" fill="url(#modalWeatherGloss)"/>
+              <circle cx="32" cy="20" r="10" fill="url(#modalWeatherSun)"/>
+              <circle cx="29.5" cy="17.5" r="8.5" stroke="#ffffff" stroke-width="0.8" opacity="0.6"/>
+              <g filter="url(#modalCloudShadow)">
+                <path d="M13.5 35H34C37.3 35 40 32.3 40 29C40 25.9 37.7 23.4 34.7 23C34.3 17.8 30.1 13.8 25 13.8C20.8 13.8 17.3 16.4 15.8 20.1C12 20.8 9 24 9 28C9 31.9 11.2 35 13.5 35Z" fill="url(#modalCloudGrad)"/>
+                <ellipse cx="25" cy="20.5" rx="8" ry="6.2" fill="#ffffff" opacity="0.95"/>
+                <circle cx="16.5" cy="27" r="6.5" fill="#ffffff" opacity="0.9"/>
+                <circle cx="32.5" cy="28" r="6" fill="#ffffff" opacity="0.85"/>
+              </g>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 dark:text-white text-lg sm:text-xl tracking-tight">
+              Chọn Khu Vực Thời Tiết
+            </h3>
+          </div>
+        </div>
+        <button onclick="closeWeatherLocationModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition" aria-label="Đóng cửa sổ">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Live Weather Current Banner inside Modal -->
+      <div class="mb-5 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-sky-500/10 border border-emerald-300/40 dark:border-emerald-500/30 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl" id="modalCurrentWeatherIcon">☀️</span>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Đang chọn:</span>
+              <span class="text-sm font-extrabold text-emerald-800 dark:text-emerald-400" id="modalCurrentCityName">TP. Hồ Chí Minh</span>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-300 font-medium" id="modalCurrentWeatherDesc">32°C • Nắng gắt</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Search input (Bỏ text 63 tỉnh thành theo yêu cầu) -->
+      <div class="relative mb-3.5">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+        <input type="text" id="weatherCitySearchInput" oninput="filterWeatherCities()" placeholder="Tìm nhanh tỉnh / thành phố..." class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
+      </div>
+
+      <!-- Cities Grid Container (Có đệm p-1.5 pt-2 tránh bị che viền trên của 3 khung đầu khi click) -->
+      <div id="weatherCitiesGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[310px] overflow-y-auto p-1.5 pt-2">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+
+      <!-- GPS Location Button & Action Footer -->
+      <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-3">
+        <button type="button" onclick="detectGPSWeather()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/60 transition cursor-pointer">
+          <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+          <span>Định vị GPS</span>
+        </button>
+
+        <button type="button" onclick="confirmWeatherCitySelection()" class="px-6 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-lg transition cursor-pointer">
+          Xác nhận
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL GIẢI THÍCH: BÙ HAO TỔN ĐIỆN CHỜ NGẦM (TINH GỌN, CHUYÊN NGHIỆP) -->
+  <!-- ======================================================== -->
+  <div id="standbyPowerInfoModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto" onclick="if(event.target === this) closeStandbyPowerInfoModal()">
+    <div class="rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative my-6 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 animate-in fade-in zoom-in-95">
+      
+      <!-- Header gọn gàng -->
+      <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-400 flex items-center justify-center font-bold text-lg flex-shrink-0">
+            ⚡
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 dark:text-white text-base tracking-tight">
+              Bù Hao Tổn Điện Chờ Ngầm
+            </h3>
+            <p class="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+              Standby Power • Ước tính ~20 kWh/tháng (~50.000đ)
+            </p>
+          </div>
+        </div>
+        <button onclick="closeStandbyPowerInfoModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition cursor-pointer" aria-label="Đóng">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Nội dung cốt lõi, ngắn gọn & đắt giá -->
+      <div class="py-4 space-y-3.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        <p>
+          <strong class="text-slate-900 dark:text-slate-100">Điện chờ ngầm là gì?</strong> Là lượng điện các thiết bị gia đình vẫn âm thầm tiêu thụ liên tục <strong>24/7</strong> khi cắm phích (dù đã tắt bằng remote).
+        </p>
+
+        <!-- Thống kê mini 2x2 tinh tế -->
+        <div class="grid grid-cols-2 gap-2 text-[11px] pt-1">
+          <div class="px-2.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-2">
+            <span>📡</span>
+            <span class="truncate">Wi-Fi (24/24): <strong>~8 kWh</strong></span>
+          </div>
+          <div class="px-2.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-2">
+            <span>📺</span>
+            <span class="truncate">TV & Box: <strong>~4 kWh</strong></span>
+          </div>
+          <div class="px-2.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-2">
+            <span>🔌</span>
+            <span class="truncate">Củ sạc, lò: <strong>~5 kWh</strong></span>
+          </div>
+          <div class="px-2.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-2">
+            <span>❄️</span>
+            <span class="truncate">Rơ-le điều hòa: <strong>~3 kWh</strong></span>
+          </div>
+        </div>
+
+        <p class="p-3 rounded-2xl bg-teal-50/80 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-800/60 text-teal-900 dark:text-teal-200 text-[11.5px]">
+          💡 <strong>Vì sao cần bù?</strong> Tổng hao phí ngầm thực tế từ <strong>15 – 25 kWh/tháng</strong>. Việc tự động bù khoản này giúp dự toán hóa đơn <strong>khớp chuẩn xác với công tơ EVN</strong> thay vì bị hụt do chỉ tính giờ bật máy thực tế.
+        </p>
+      </div>
+
+      <!-- Nút Đã hiểu thanh lịch -->
+      <div class="pt-2 flex justify-end">
+        <button type="button" onclick="closeStandbyPowerInfoModal()" class="w-full sm:w-auto px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 shadow-sm transition cursor-pointer">
+          Đã hiểu
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- HỘP THOẠI TIN NHẮN TRỢ LÝ GIẢI ĐÁP EVN (GÓC DƯỚI BÊN PHẢI) -->
+  <!-- ======================================================== -->
+  <div id="assistantChatWidget" class="hidden fixed bottom-[11rem] right-3 sm:bottom-6 sm:right-28 z-50 w-[355px] sm:w-[410px] h-[540px] sm:h-[580px] max-h-[68vh] sm:max-h-[82vh] bg-white dark:bg-slate-900 rounded-[26px] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.35)] border border-slate-200/90 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-bottom-5">
+    
+    <!-- Header hộp thoại tin nhắn -->
+    <div class="p-3.5 sm:p-4 bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 text-white flex items-center justify-between shadow-md flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="relative w-10 h-10 rounded-full border-2 border-white/70 bg-white/20 p-0.5 overflow-hidden flex-shrink-0 shadow-xs">
+          <img src="assets/ai-assistant-avatar.png" alt="Trợ lý giải đáp" class="w-full h-full object-contain">
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full"></span>
+        </div>
+        <div>
+          <h3 class="font-extrabold text-sm sm:text-base leading-tight tracking-tight flex items-center gap-1.5">
+            Trợ Lý Giải Đáp EVN
+          </h3>
+          <p class="text-[11px] text-teal-100 flex items-center gap-1 mt-0.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+            Sẵn sàng giải đáp 24/7
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1">
+        <button type="button" onclick="resetAssistantChat()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer" title="Làm mới cuộc trò chuyện">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        </button>
+        <button type="button" onclick="closeAssistantChat()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer" title="Đóng hộp thoại">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Khu vực cuộn tin nhắn chat -->
+    <div id="assistantChatMessages" class="flex-1 p-3.5 sm:p-4 overflow-y-auto space-y-3.5 bg-slate-50/90 dark:bg-slate-950/60 text-xs sm:text-[13px]">
+      
+      <!-- Tin nhắn chào mừng ban đầu từ Bot -->
+      <div class="flex items-start gap-2.5 max-w-[92%]">
+        <div class="w-7 h-7 rounded-full bg-teal-100 dark:bg-slate-800 p-0.5 flex-shrink-0 mt-0.5 border border-teal-200 dark:border-slate-700">
+          <img src="assets/ai-assistant-avatar.png" alt="Bot" class="w-full h-full object-contain">
+        </div>
+        <div class="space-y-1">
+          <div class="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 p-3 rounded-2xl rounded-tl-xs text-slate-700 dark:text-slate-200 shadow-2xs leading-relaxed">
+            Xin chào! Em là <strong>Trợ lý giải đáp EVN</strong> 🤖<br><br>
+            Em có thể giúp bạn giải đáp mọi thắc mắc về <strong>biểu giá điện 6 bậc thang</strong>, hao tổn <strong>điện chờ ngầm</strong>, mẹo dùng <strong>điều hòa tiết kiệm</strong> hoặc nguyên nhân <strong>nhảy aptomat</strong>.<br><br>
+            Bạn có thể chọn câu hỏi gợi ý bên dưới hoặc gõ trực tiếp vào ô chat nhé!
+          </div>
+          <span class="text-[10px] text-slate-400 pl-1 font-medium">Vừa xong</span>
+        </div>
+      </div>
+
+      <!-- Khung gợi ý câu hỏi nhanh -->
+      <div id="assistantQuickSuggestions" class="space-y-1.5 pt-1 pl-8">
+        <p class="text-[10.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Gợi ý câu hỏi phổ biến:</p>
+        
+        <button type="button" onclick="askPresetQuestion('rates')" class="w-full text-left p-2.5 rounded-xl bg-white dark:bg-slate-800/90 border border-teal-200/70 dark:border-teal-800/60 hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-2xs transition flex items-center justify-between group/q cursor-pointer">
+          <span class="truncate pr-1">⚡ Biểu giá 6 bậc thang tính ra sao?</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-teal-600 flex-shrink-0 transition-transform group-hover/q:translate-x-1"></i>
+        </button>
+
+        <button type="button" onclick="askPresetQuestion('standby')" class="w-full text-left p-2.5 rounded-xl bg-white dark:bg-slate-800/90 border border-teal-200/70 dark:border-teal-800/60 hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-2xs transition flex items-center justify-between group/q cursor-pointer">
+          <span class="truncate pr-1">🔌 "Điện chờ ngầm" là gì và tốn bao nhiêu?</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-teal-600 flex-shrink-0 transition-transform group-hover/q:translate-x-1"></i>
+        </button>
+
+        <button type="button" onclick="askPresetQuestion('cooling_weather')" class="w-full text-left p-2.5 rounded-xl bg-white dark:bg-slate-800/90 border border-teal-200/70 dark:border-teal-800/60 hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-2xs transition flex items-center justify-between group/q cursor-pointer">
+          <span class="truncate pr-1">☀️ Vì sao nắng nóng điều hòa ngốn điện gấp đôi?</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-teal-600 flex-shrink-0 transition-transform group-hover/q:translate-x-1"></i>
+        </button>
+
+        <button type="button" onclick="askPresetQuestion('cooling_fan')" class="w-full text-left p-2.5 rounded-xl bg-white dark:bg-slate-800/90 border border-teal-200/70 dark:border-teal-800/60 hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-2xs transition flex items-center justify-between group/q cursor-pointer">
+          <span class="truncate pr-1">🌬️ Điều hòa để 26-28°C kèm quạt có tiết kiệm?</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-teal-600 flex-shrink-0 transition-transform group-hover/q:translate-x-1"></i>
+        </button>
+
+        <button type="button" onclick="askPresetQuestion('breaker')" class="w-full text-left p-2.5 rounded-xl bg-white dark:bg-slate-800/90 border border-teal-200/70 dark:border-teal-800/60 hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-2xs transition flex items-center justify-between group/q cursor-pointer">
+          <span class="truncate pr-1">⚠️ Vì sao Aptomat nhảy liên tục giờ cao điểm?</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-teal-600 flex-shrink-0 transition-transform group-hover/q:translate-x-1"></i>
+        </button>
+
+        <button type="button" onclick="askPresetQuestion('meter')" class="w-full text-left p-2.5 rounded-xl bg-white dark:bg-slate-800/90 border border-teal-200/70 dark:border-teal-800/60 hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-2xs transition flex items-center justify-between group/q cursor-pointer">
+          <span class="truncate pr-1">📊 Cách đọc chỉ số công tơ điện tử EVN?</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-teal-600 flex-shrink-0 transition-transform group-hover/q:translate-x-1"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Thanh nhập câu hỏi ở đáy hộp thoại -->
+    <div class="p-3 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
+      <form onsubmit="handleAssistantChatSubmit(event)" class="flex items-center gap-2">
+        <input type="text" 
+               id="assistantChatInput" 
+               placeholder="Nhập câu hỏi về điện..." 
+               autocomplete="off"
+               class="flex-1 px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 focus:border-teal-500 rounded-xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition">
+        <button type="submit" 
+                class="w-10 h-10 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white flex items-center justify-center shadow-xs transition flex-shrink-0 cursor-pointer"
+                title="Gửi câu hỏi">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- Core Application Scripts: Load immediately for instant responsiveness -->
+  <script src="presets.js?v=20261011_v11"></script>
+  <script src="app.js?v=20261011_v11"></script>
+
+  <!-- TensorFlow.js & MobileNet AI Vision Engine (Non-blocking, deferred loading) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.innerWidth >= 1024 && localStorage.getItem('evn_taskbar_collapsed') === 'true') {
+        document.body.classList.add('taskbar-collapsed');
+      }
+      lucide.createIcons();
+    });
+
+    function toggleSidebar(open) {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (open) {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+      }
+    }
+
+    function triggerRecalculateAnimation() {
+      const icon = document.getElementById('recalcIcon');
+      if (icon) {
+        icon.classList.add('animate-spin');
+        setTimeout(() => icon.classList.remove('animate-spin'), 600);
+      }
+      renderApp();
+      showToast('Đã cập nhật tính toán hóa đơn mới nhất!');
+    }
+
+
+
+    function openDonateModal() {
+      const modal = document.getElementById('donateModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function closeDonateModal() {
+      const modal = document.getElementById('donateModal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function copyBankAccount() {
+      const acc = '5057552007';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(acc).then(() => {
+          showToast('Đã sao chép số tài khoản: 5057552007');
+        }).catch(() => {
+          fallbackCopy(acc);
+        });
+      } else {
+        fallbackCopy(acc);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Đã sao chép số tài khoản: ' + text);
+      } catch (err) {
+        showToast('Số tài khoản: ' + text);
+      }
+      document.body.removeChild(ta);
+    }
+
+    function openStandbyPowerInfoModal() {
+      const modal = document.getElementById('standbyPowerInfoModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function closeStandbyPowerInfoModal() {
+      const modal = document.getElementById('standbyPowerInfoModal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    // Thu gọn / Mở rộng thanh taskbar (sidebar)
+    function toggleTaskbarCollapse() {
+      const isMobile = window.innerWidth < 1024;
+      const sidebar = document.getElementById('sidebar');
+      if (isMobile) {
+        const isHidden = sidebar.classList.contains('-translate-x-full');
+        toggleSidebar(isHidden);
+        return;
+      }
+      const isCollapsed = document.body.classList.toggle('taskbar-collapsed');
+      localStorage.setItem('evn_taskbar_collapsed', isCollapsed ? 'true' : 'false');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Mở / Đóng dropdown Báo chí & Tin tức Điện lực (Icon Ảnh 1)
+    function toggleNewsPressDropdown() {
+      const dd = document.getElementById('newsPressDropdown');
+      if (dd) {
+        dd.classList.toggle('hidden');
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+    window.toggleNewsPressDropdown = toggleNewsPressDropdown;
+
+    function toggleNotificationDropdown() {
+      toggleNewsPressDropdown();
+    }
+
+    function clearAllNotifications() {
+      const badge = document.getElementById('newsBadgeDot') || document.getElementById('notifBadgeDot');
+      if (badge) badge.classList.add('hidden');
+      showToast('Đã đánh dấu đọc tin tức!');
+      const dd = document.getElementById('newsPressDropdown') || document.getElementById('notificationDropdown');
+      if (dd) dd.classList.add('hidden');
+    }
+
+    // Đóng dropdown tin tức khi click ra ngoài
+    document.addEventListener('click', (e) => {
+      const newsBtn = document.getElementById('newsPressBtn');
+      const newsDd = document.getElementById('newsPressDropdown');
+      if (newsDd && !newsDd.classList.contains('hidden')) {
+        if (newsBtn && !newsDd.contains(e.target) && !newsBtn.contains(e.target)) {
+          newsDd.classList.add('hidden');
+        }
+      }
+      const notifBtn = document.getElementById('notificationBtn');
+      const notifDd = document.getElementById('notificationDropdown');
+      if (notifDd && !notifDd.classList.contains('hidden')) {
+        if (notifBtn && !notifDd.contains(e.target) && !notifBtn.contains(e.target)) {
+          notifDd.classList.add('hidden');
+        }
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeDonateModal();
+        closeStandbyPowerInfoModal();
+        if (typeof closeAssistantChat === 'function') {
+          closeAssistantChat();
+        }
+        const newsDd = document.getElementById('newsPressDropdown');
+        if (newsDd) newsDd.classList.add('hidden');
+        const notifDd = document.getElementById('notificationDropdown');
+        if (notifDd) notifDd.classList.add('hidden');
+        if (typeof closeWeatherLocationModal === 'function') {
+          closeWeatherLocationModal();
+        }
+      }
+    });
+  </script>
+
+  <!-- Floating AI Assistant Widget (Ngay phía trên nút Messenger) -->
+  <aside aria-label="Trợ lý giải đáp EVN" class="fixed bottom-[74px] sm:bottom-20 right-5 z-40 floating-assistant-group group">
+    <div class="relative flex items-center justify-center">
+
+      <!-- Hover Speech Bubble -->
+      <div onclick="toggleAssistantChat()" 
+           class="pointer-events-none group-hover:pointer-events-auto opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out absolute right-full bottom-0 mr-3 w-72 p-3 rounded-2xl assistant-speech-bubble flex items-center gap-3 cursor-pointer z-50 shadow-2xl">
+        <!-- Logo Trợ lý dạng Squircle bo tròn có viền -->
+        <div class="w-10 h-10 rounded-xl p-1 bg-gradient-to-b from-white to-slate-100 dark:from-slate-800 dark:to-slate-700 shadow-sm border border-slate-200/80 dark:border-slate-600 flex-shrink-0 flex items-center justify-center overflow-hidden">
+          <img src="assets/ai-assistant-avatar.png" alt="Trợ lý giải đáp" class="w-full h-full object-contain">
+        </div>
+        
+        <!-- Nội dung tin nhắn Trợ lý -->
+        <div class="flex-1 min-w-0 pr-1">
+          <div class="flex items-center justify-between gap-2 mb-0.5">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs animate-pulse flex-shrink-0"></span>
+              <span class="text-xs font-bold text-slate-800 dark:text-white tracking-tight">Trợ lý giải đáp</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-normal">bây giờ</span>
+          </div>
+          <div class="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+            Các khái niệm và vấn đề liên quan đến điện.
+          </div>
+          <div class="text-[10px] font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-1 mt-0.5">
+            <span>Bấm để trò chuyện</span>
+            <i data-lucide="arrow-right" class="w-2.5 h-2.5"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nút tròn 3D Trợ lý giải đáp -->
+      <button type="button" 
+              onclick="toggleAssistantChat()" 
+              class="relative flex items-center justify-center w-12 h-12 sm:w-13 sm:h-13 rounded-full transition-all duration-300 transform-gpu hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-teal-300/50 cursor-pointer" 
+              title="Trợ lý giải đáp EVN"
+              aria-label="Mở Trợ lý giải đáp">
+        <!-- Glow ambient background xanh ngọc/cyan -->
+        <div class="absolute inset-1 rounded-full bg-gradient-to-tr from-cyan-400 via-teal-500 to-emerald-500 opacity-70 blur-xs group-hover:opacity-100 transition-all duration-300"></div>
+        
+        <!-- 3D Icon container with gentle float motion -->
+        <div class="relative w-full h-full rounded-full flex items-center justify-center p-1 bg-white/20 backdrop-blur-xs border border-white/40 shadow-lg">
+          <img src="assets/ai-assistant-avatar.png" alt="Trợ lý giải đáp" class="w-full h-full object-contain floating-3d-motion">
+        </div>
+        
+        <!-- Online status indicator badge -->
+        <span class="absolute top-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full shadow-xs flex items-center justify-center">
+          <span class="w-1 h-1 bg-white rounded-full"></span>
+        </span>
+      </button>
+
+    </div>
+  </aside>
+
+  <!-- Floating 3D Facebook Messenger Contact Widget (Góc dưới bên phải) -->
+  <aside aria-label="Liên hệ Facebook" class="fixed bottom-5 right-5 z-40 floating-fb-group">
+    <a href="https://www.facebook.com/cosim0505" 
+       target="_blank" 
+       rel="noopener noreferrer" 
+       class="relative flex items-center justify-center w-12 h-12 sm:w-13 sm:h-13 rounded-full transition-all duration-300 transform-gpu hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-indigo-300/50 group"
+       title="Chat với Cosima trên Facebook">
+      <!-- Glow ambient background -->
+      <div class="absolute inset-1 rounded-full bg-gradient-to-tr from-[#00c6ff] via-[#0072ff] to-[#ff0080] opacity-70 blur-xs group-hover:opacity-100 transition-all duration-300"></div>
+      
+      <!-- 3D Icon container with gentle float motion -->
+      <div class="relative w-full h-full rounded-full flex items-center justify-center p-1 bg-white/20 backdrop-blur-xs border border-white/40 shadow-xl">
+        <img src="assets/messenger-3d-icon.png" alt="Liên hệ Facebook" class="w-full h-full object-contain floating-3d-motion">
+      </div>
+      
+      <!-- Hover Tooltip -->
+      <span class="pointer-events-none absolute right-full mr-3 whitespace-nowrap bg-slate-900/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-xl opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 shadow-xl border border-white/10">
+        Chat Facebook
+      </span>
+    </a>
+  </aside>
+</body>
+</html>
