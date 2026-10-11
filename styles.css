@@ -733,6 +733,14 @@ select:focus-visible {
   transform: translateZ(0);
 }
 
+@media (max-width: 639px) {
+  .btn-donate-3d {
+    padding: 0.32rem 0.75rem;
+    font-size: 0.75rem;
+    gap: 0.25rem;
+  }
+}
+
 /* Glass shine light reflection sweep */
 .btn-donate-3d::after {
   content: '';
@@ -878,6 +886,13 @@ select:focus-visible {
   padding: 1.4rem 1.5rem !important;
   border-radius: 1.25rem !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 639px) {
+  .tip-card {
+    padding: 1rem 1.1rem !important;
+    border-radius: 1rem !important;
+  }
 }
 
 .tip-card:hover {

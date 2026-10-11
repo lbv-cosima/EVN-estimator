@@ -1938,17 +1938,21 @@ function renderTipsHandbook() {
     html += `
       <div class="dashboard-card p-5 sm:p-6 tip-card ${isApplied ? 'applied' : ''} flex flex-col justify-between space-y-4">
         <div>
-          <!-- Top Row: Icon + Title + Badge -->
-          <div class="flex items-start justify-between gap-3 mb-3">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-900/40 border border-teal-200/70 dark:border-teal-700/60 text-teal-700 dark:text-teal-300 flex items-center justify-center flex-shrink-0 shadow-2xs">
-                <i data-lucide="${tip.icon}" class="w-4.5 h-4.5"></i>
+          <!-- Top Row: Icon + Title + Badge (Tối ưu responsive trên điện thoại không bị co nghẽn chữ) -->
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3 mb-3">
+            <div class="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-teal-50 dark:bg-teal-900/40 border border-teal-200/70 dark:border-teal-700/60 text-teal-700 dark:text-teal-300 flex items-center justify-center flex-shrink-0 shadow-2xs mt-0.5">
+                <i data-lucide="${tip.icon}" class="w-4 h-4 sm:w-4.5 sm:h-4.5"></i>
               </div>
-              <h4 class="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug">${tip.title}</h4>
+              <div class="min-w-0 flex-1">
+                <h4 class="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base leading-snug">${tip.title}</h4>
+              </div>
             </div>
-            <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-lg border flex-shrink-0 shadow-2xs ${tip.badgeClass}">
-              ${tip.badge}
-            </span>
+            <div class="pl-10.5 sm:pl-0 flex-shrink-0 self-start sm:self-auto">
+              <span class="text-[10px] sm:text-[10.5px] font-bold px-2.5 py-1 rounded-lg border shadow-2xs inline-block ${tip.badgeClass}">
+                ${tip.badge}
+              </span>
+            </div>
           </div>
 
           <!-- Bullet Points: 3 clear actionable bullets -->
@@ -2746,27 +2750,33 @@ function renderSmartSuggestions(items, isPopularDefault = false, currentQuery = 
     const wattageDisplay = item.powerWatts ? `<span>• ${item.powerWatts}W</span>` : '';
 
     return `
-      <div class="smart-suggest-card flex items-center justify-between gap-2.5" onclick="applySmartPresetByIndex(${idx})" data-idx="${idx}">
-        <div class="flex items-center gap-2.5 min-w-0 flex-1">
-          <div class="smart-thumb-box">
+      <div class="smart-suggest-card p-2.5 sm:p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-2.5" onclick="applySmartPresetByIndex(${idx})" data-idx="${idx}">
+        <div class="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+          <div class="smart-thumb-box flex-shrink-0 mt-0.5 sm:mt-0">
             ${thumbSvg}
           </div>
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-1.5">
-              <h5 class="text-xs font-bold text-slate-900 truncate leading-snug">${escapeHtml(item.name)}</h5>
+            <div class="flex items-center gap-2 justify-between">
+              <h5 class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">${escapeHtml(item.name)}</h5>
+              <div class="sm:hidden flex-shrink-0">
+                ${inverterBadge}
+              </div>
             </div>
-            <div class="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
-              <span class="font-medium text-slate-700">${escapeHtml(item.brand || '')}</span>
+            <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 flex-wrap">
+              <span class="font-semibold text-slate-700">${escapeHtml(item.brand || '')}</span>
               ${item.model ? `<span>• ${escapeHtml(item.model)}</span>` : ''}
               ${wattageDisplay}
             </div>
           </div>
         </div>
 
-        <div class="flex items-center gap-2 flex-shrink-0">
-          ${inverterBadge}
-          <button type="button" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition shadow-2xs">
-            Chọn
+        <div class="flex items-center justify-between sm:justify-end gap-2 flex-shrink-0 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
+          <div class="hidden sm:block">
+            ${inverterBadge}
+          </div>
+          <button type="button" class="w-full sm:w-auto px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-2xs flex items-center justify-center gap-1">
+            <span>Chọn mẫu</span>
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
           </button>
         </div>
       </div>
@@ -3464,11 +3474,25 @@ function initEventListeners() {
     }
   });
 
-  // Đồng bộ số thành viên thời gian thực giữa Cài đặt & Avatar Profile
+  // Đồng bộ số thành viên giữa Cài đặt & Avatar Profile (an toàn, không giật số khi gõ)
   const membersInput = document.getElementById('settingsMembers');
   if (membersInput) {
-    const syncMembersLive = (val) => {
-      const num = Math.max(1, Math.min(20, parseInt(val) || 4));
+    const handleMembersLive = (val) => {
+      if (val === '' || val === null || val === undefined) return;
+      const parsed = parseInt(val, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 20) {
+        state.factors.members = parsed;
+        if (!state.profile) state.profile = {};
+        state.profile.members = parsed;
+        updateProfileUI();
+        saveToLocalStorage();
+      }
+    };
+
+    const handleMembersCommit = (val) => {
+      const parsed = parseInt(val, 10);
+      const num = isNaN(parsed) ? 4 : Math.max(1, Math.min(20, parsed));
+      membersInput.value = num;
       state.factors.members = num;
       if (!state.profile) state.profile = {};
       state.profile.members = num;
@@ -3476,9 +3500,11 @@ function initEventListeners() {
       renderApp();
       saveToLocalStorage();
     };
+
     membersInput.value = state.factors.members || state.profile?.members || 4;
-    membersInput.addEventListener('input', (e) => syncMembersLive(e.target.value));
-    membersInput.addEventListener('change', (e) => syncMembersLive(e.target.value));
+    membersInput.addEventListener('input', (e) => handleMembersLive(e.target.value));
+    membersInput.addEventListener('change', (e) => handleMembersCommit(e.target.value));
+    membersInput.addEventListener('blur', (e) => handleMembersCommit(e.target.value));
   }
 
   syncFactorInputs();
@@ -3712,7 +3738,9 @@ function syncSettingsInputs() {
   const purpose = profile.purpose || 'Hộ gia đình sinh hoạt thông thường';
 
   const settingsMembersEl = document.getElementById('settingsMembers');
-  if (settingsMembersEl) settingsMembersEl.value = members;
+  if (settingsMembersEl && document.activeElement !== settingsMembersEl) {
+    settingsMembersEl.value = members;
+  }
 
   const settingsCitySelect = document.getElementById('settingsCitySelect');
   if (settingsCitySelect && settingsCitySelect.options.length > 0) {
@@ -3942,7 +3970,8 @@ function saveSettingsForm(event) {
     const evnCodeInput = document.getElementById('settingsEvnCodeInput');
     const purposeSelect = document.getElementById('settingsPurposeSelect');
 
-    const members = membersInput ? parseInt(membersInput.value) || 4 : 4;
+    const members = membersInput ? Math.max(1, Math.min(20, parseInt(membersInput.value, 10) || 4)) : 4;
+    if (membersInput) membersInput.value = members;
     const city = citySelect ? citySelect.value : (state.profile?.city || currentWeatherCity || 'TP. Hồ Chí Minh');
     const housingType = housingSelect ? housingSelect.value : (state.profile?.housingType || 'apartment');
     const evnCode = evnCodeInput ? evnCodeInput.value.trim() : '';
